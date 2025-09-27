@@ -18,12 +18,12 @@
     {% csrf_token %}
     <div class="mb-3">
       <label for="nombre" class="form-label">Nombre</label>
-      <input type="text" class="form-control" id="nombre" name="nombre" placeholder="Tu nombre">
+      <input type="text" class="form-control" id="nombre" name="nombre" placeholder="Tu nombre" required>
     </div>
 
     <div class="mb-3">
       <label for="email" class="form-label">Correo electrónico</label>
-      <input type="email" class="form-control" id="email" name="email" placeholder="correo@ejemplo.com">
+      <input type="email" class="form-control" id="email" name="email" placeholder="correo@ejemplo.com" required>
     </div>
 
     <div class="mb-3">
