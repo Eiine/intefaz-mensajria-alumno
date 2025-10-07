@@ -1,10 +1,15 @@
 from django.shortcuts import render
 from .models import Alumno 
 from django.http import JsonResponse
+from django.db.models import Count
 
 def inicio(request):
-    alumnos = Alumno.objects.all().order_by('nombre')  
-    return render(request, 'mensajes/inicio.html', {'alumnos': alumnos})
+    alerta = request.GET.get('alerta')  
+    alumnos = Alumno.objects.all().order_by('nombre')
+    if alerta not in (None, '', '0'):
+        alumnos = alumnos.annotate(cant_notif=Count('notificacion')).filter(cant_notif=int(alerta))
+    return render(request, 'mensajes/inicio.html', {'alumnos': alumnos, 'alerta': alerta})
+
 
 def filtrar_alumnos(request):
     num_alertas = int(request.GET.get('alerta', 0))
