@@ -3,117 +3,272 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notificaciones - Plataforma Académica</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+    <title>Gestión de Alumnos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        main {
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+        }
+        .tag-btn {
+            transition: all 0.3s;
+        }
+        .tag-btn.active {
+            background-color: #0d6efd;
+            color: white;
+        }
+        #search-input {
+            max-width: 400px;
+        }
+        .contact-icons a {
+            font-size: 1.2rem;
+            margin-left: 10px;
+            text-decoration: none;
+        }
+        .contact-icons a:hover {
+            opacity: 0.8;
+        }
+    </style>
 </head>
-<body class="bg-light">
+<body>
+    {% include "mensajes/navbar.html" %}
 
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="#">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="#800000" xmlns="http://www.w3.org/2000/svg">
-                    <rect width="24" height="24" rx="4"/>
-                </svg>
-            </a>
+    <main class="d-flex justify-content-center align-items-start p-4">
+        <div class="container text-center">
+            <h2 class="fw-bold text-dark mb-4">Lista de alumnos</h2>
 
-            <div class="flex-grow-1"></div>
+            <!-- 🔍 Barra de búsqueda con botón -->
+            <div class="mb-4 d-flex justify-content-center gap-2">
+                <input type="text" id="search-input" class="form-control" placeholder="Buscar por nombre o DNI...">
+                <button id="btn-buscar" class="btn btn-primary">
+                    <i class="bi bi-search"></i> Buscar
+                </button>
+            </div>
 
-            <!-- Icono de perfil con dropdown -->
-            <div class="dropdown">
-                <a class="nav-link dropdown-toggle" href="#" role="button" id="perfilDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="bi bi-person-circle fs-5"></i>
-                </a>
-                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="perfilDropdown">
-                    <li><a class="dropdown-item" href="#">Perfil</a></li>
-                    <li><a class="dropdown-item active" href="{% url 'notificaciones' %}">Notificaciones</a></li>
-                    <li><a class="dropdown-item" href="#">Configuraciones</a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" href="#">Cerrar sesión</a></li>
-                </ul>
+            <!-- 🏷️ Botones de filtro -->
+            <div class="btn-group mb-4" role="group">
+                <button type="button" class="btn btn-outline-secondary tag-btn" data-tag="Pago">Pago</button>
+                <button type="button" class="btn btn-outline-secondary tag-btn" data-tag="Falta de documentación">Falta de documentación</button>
+                <button type="button" class="btn btn-outline-secondary tag-btn" data-tag="Tarea">Tarea</button>
+                <button type="button" class="btn btn-outline-secondary tag-btn" data-tag="">Todos</button>
+            </div>
+
+            <!-- 📋 Contenedor de alumnos -->
+            <div id="alumnos-container" class="d-flex flex-column gap-3">
+                {% for alumno in alumnos %}
+                <div 
+                    class="alumno-card card border-start border-4 
+                    {% if not alumno.estado_pago %}border-warning{% elif not alumno.estado_documentacion %}border-danger{% else %}border-success{% endif %} shadow-sm"
+                    data-estado-pago="{{ alumno.estado_pago|yesno:'completo,pago_pendiente' }}"
+                    data-estado-doc="{{ alumno.estado_documentacion|yesno:'completo,falta_documentacion' }}"
+                    data-alumno-id="{{ alumno.id }}"
+                >
+                    <div class="card-body text-start">
+                        <div class="d-flex justify-content-between mb-2">
+                            <div>
+                                {% if not alumno.estado_pago %}
+                                    <span class="badge bg-warning text-dark">Pago pendiente</span>
+                                {% elif not alumno.estado_documentacion %}
+                                    <span class="badge bg-danger">Falta documentación</span>
+                                {% else %}
+                                    <span class="badge bg-success">Completo</span>
+                                {% endif %}
+                            </div>
+                            <small class="text-muted">
+                                {% if alumno.carrera %}
+                                    {{ alumno.carrera.nombre }}
+                                {% else %}
+                                    Sin carrera
+                                {% endif %}
+                            </small>
+                        </div>
+
+                        <!-- 💬 Nombre + Iconos -->
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">{{ alumno.user.first_name }} {{ alumno.user.last_name }}</h5>
+                            <div class="contact-icons">
+                                {% if alumno.telefono %}
+                                <button class="btn btn-success btn-sm send-whatsapp" data-alumno-id="{{ alumno.id }}" data-nombre="{{ alumno.user.first_name }}" data-telefono="{{ alumno.telefono }}" title="Enviar WhatsApp">
+                                    <i class="bi bi-whatsapp"></i>
+                                </button>
+                                {% endif %}
+                                {% if alumno.user.email %}
+                                <button class="btn btn-primary btn-sm send-email" data-alumno-id="{{ alumno.id }}" data-nombre="{{ alumno.user.first_name }}" data-email="{{ alumno.user.email }}" title="Enviar correo">
+                                    <i class="bi bi-envelope-fill"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- 📄 Datos -->
+                        <p class="card-text mt-2">
+                            DNI: {{ alumno.dni }}<br>
+                            Teléfono: {{ alumno.telefono }}<br>
+                            Dirección: {{ alumno.direccion }}
+                        </p>
+                    </div>
+                </div>
+                {% empty %}
+                <p>No hay alumnos registrados.</p>
+                {% endfor %}
             </div>
         </div>
-    </nav>
+    </main>
 
-    <div class="container-fluid">
-        <div class="row">
-
-            <!-- Sidebar vacío / solo para layout -->
-            <aside class="col-md-3 col-lg-2 bg-white border-end p-3 vh-100"></aside>
-
-            <!-- Área principal de notificaciones -->
-            <main class="col-md-9 col-lg-10 p-3 overflow-auto" style="height: 100vh;">
-                <header class="mb-4">
-                    <h2 class="fw-bold text-dark">Lista de alumnos</h2>
-                    <div class="d-flex mb-3">
-                        <input class="form-control me-2" type="search" placeholder="Buscar..." aria-label="Buscar" id="inputMensaje">
-                    </div>
-                    <div class="btn-group mb-3" role="group">
-                        <button type="button" class="btn btn-outline-secondary btn-sm tag-btn" data-msg="Pago pendiente">Pago</button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm tag-btn" data-msg="Falta documentación">Falta de documentación</button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm tag-btn" data-msg="Tarea pendiente">Tarea</button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm tag-btn" data-msg="Circular enviada">Circular</button>
-                    </div>
-                </header>
-
-                <div class="d-flex flex-column gap-3">
-
-                    <!-- Notificación ejemplo -->
-                    <div class="card border-start border-4 border-danger shadow-sm">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between mb-2">
-                                <span class="badge bg-danger">Tarea</span>
-                                <small class="text-muted">2024-07-26 10:00</small>
-                            </div>
-                            <h5 class="card-title">Entrega final de Proyecto</h5>
-                            <p class="card-text">Recuerda que la entrega final del proyecto de "Desarrollo Web Avanzado" es mañana a las 23:59.</p>
-                            <div class="d-flex gap-2 mt-2">
-                                <a href="#" class="btn btn-success btn-sm"><i class="bi bi-whatsapp me-1"></i> WhatsApp</a>
-                                <a href="#" class="btn btn-danger btn-sm"><i class="bi bi-envelope me-1"></i> Correo</a>
-                                <a href="#" class="btn btn-secondary btn-sm"><i class="bi bi-inbox me-1"></i> Inbox</a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Notificación ejemplo 2 -->
-                    <div class="card border-start border-4 border-warning shadow-sm">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between mb-2">
-                                <span class="badge bg-warning text-dark">Pago</span>
-                                <small class="text-muted">2024-07-27 12:00</small>
-                            </div>
-                            <h5 class="card-title">Pago pendiente de matrícula</h5>
-                            <p class="card-text">El alumno debe completar el pago de matrícula antes del 30 de julio.</p>
-                            <div class="d-flex gap-2 mt-2">
-                                <a href="#" class="btn btn-success btn-sm"><i class="bi bi-whatsapp me-1"></i> WhatsApp</a>
-                                <a href="#" class="btn btn-danger btn-sm"><i class="bi bi-envelope me-1"></i> Correo</a>
-                                <a href="#" class="btn btn-secondary btn-sm"><i class="bi bi-inbox me-1"></i> Inbox</a>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-            </main>
+    <!-- Modal para editar mensaje antes de enviar -->
+    <div class="modal fade" id="mensajeModal" tabindex="-1" aria-labelledby="mensajeModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="mensajeModalLabel">Enviar mensaje</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            <textarea id="mensajeModalTextarea" class="form-control" rows="6"></textarea>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-primary" id="enviarModalBtn">Enviar</button>
+          </div>
         </div>
+      </div>
     </div>
 
-    <footer class="text-center text-muted py-2 bg-white border-top">
-        <small>Made with Bootstrap</small>
-    </footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
-    <script>
-        // Script para actualizar el input al seleccionar un tag
-        const tagButtons = document.querySelectorAll('.tag-btn');
-        const inputMensaje = document.getElementById('inputMensaje');
+<script>
+const searchInput = document.getElementById("search-input");
+const searchBtn = document.getElementById("btn-buscar");
+const alumnoCards = document.querySelectorAll(".alumno-card");
+const container = document.getElementById("alumnos-container");
+const tagButtons = document.querySelectorAll(".tag-btn");
+let filtroTag = "";
+let alumnoSeleccionado = null;
+let tipoEnvio = ""; // 'WhatsApp' o 'Email'
 
-        tagButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                inputMensaje.value = btn.getAttribute('data-msg');
-            });
+// Función de filtrado
+function filtrarAlumnos() {
+    const texto = searchInput.value.trim().toLowerCase();
+    let encontrados = 0;
+    alumnoCards.forEach(card => {
+        const nombre = card.querySelector(".card-title").textContent.toLowerCase();
+        const dniTexto = card.querySelector(".card-text").textContent.toLowerCase();
+        const dniMatch = dniTexto.match(/dni:\s*(\d+)/i);
+        const dni = dniMatch ? dniMatch[1] : "";
+        const estadoPago = card.dataset.estadoPago;
+        const estadoDoc = card.dataset.estadoDoc;
+        const coincideNombre = nombre.includes(texto);
+        const coincideDni = dni.includes(texto);
+        const coincideInicioDni = dni.startsWith(texto);
+        const coincideBusqueda = (texto === "" || coincideNombre || coincideDni || coincideInicioDni);
+
+        let coincideTag = true;
+        if (filtroTag === "Pago") coincideTag = (estadoPago === "pago_pendiente");
+        else if (filtroTag === "Falta de documentación") coincideTag = (estadoDoc === "falta_documentacion");
+        else if (filtroTag === "Tarea") coincideTag = false;
+
+        if (coincideBusqueda && coincideTag) {
+            card.style.display = "block";
+            encontrados++;
+        } else card.style.display = "none";
+    });
+
+    const mensajeExistente = document.getElementById("mensaje-no-coincidencias");
+    if (mensajeExistente) mensajeExistente.remove();
+    if (encontrados === 0) {
+        const msg = document.createElement("p");
+        msg.id = "mensaje-no-coincidencias";
+        msg.textContent = "No hay coincidencias por nombre o DNI.";
+        msg.className = "text-muted mt-3";
+        container.appendChild(msg);
+    }
+}
+
+// Eventos de búsqueda
+searchBtn.addEventListener("click", filtrarAlumnos);
+searchInput.addEventListener("keydown", (e) => { if(e.key==="Enter") filtrarAlumnos(); });
+tagButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+        tagButtons.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        filtroTag = btn.dataset.tag;
+        filtrarAlumnos();
+    });
+});
+
+// Modal
+const mensajeModal = new bootstrap.Modal(document.getElementById('mensajeModal'));
+const mensajeTextarea = document.getElementById('mensajeModalTextarea');
+const enviarModalBtn = document.getElementById('enviarModalBtn');
+
+// Función para crear notificación en Django
+async function crearNotificacion(tipo, alumnoId, mensaje) {
+    try {
+        await fetch("{% url 'crear_notificacion' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify({
+                alumno: alumnoId,
+                tipo: tipo,
+                mensaje: mensaje,
+                estado_envio: "Pendiente"
+            })
         });
-    </script>
+    } catch (err) {
+        console.error("Error al guardar notificación:", err);
+    }
+}
 
+// Abrir modal al hacer clic
+document.querySelectorAll(".send-whatsapp, .send-email").forEach(btn => {
+    btn.addEventListener("click", () => {
+        const card = btn.closest(".alumno-card");
+        alumnoSeleccionado = card.dataset.alumnoId;
+        const nombre = btn.dataset.nombre;
+        if(btn.classList.contains("send-whatsapp")) {
+            tipoEnvio = "WhatsApp";
+            mensajeTextarea.value = `Hola ${nombre}, desde administración, nos comunicamos con usted para:`;
+        } else {
+            tipoEnvio = "Email";
+            mensajeTextarea.value = `Hola ${nombre}, desde administración, nos comunicamos con usted para:`;
+        }
+        mensajeModal.show();
+    });
+});
+
+// Enviar desde modal
+enviarModalBtn.addEventListener("click", () => {
+    const mensaje = mensajeTextarea.value;
+    if(!alumnoSeleccionado) return;
+
+    // Guardar notificación en Django
+    crearNotificacion(tipoEnvio, alumnoSeleccionado, mensaje);
+
+    const card = document.querySelector(`.alumno-card[data-alumno-id="${alumnoSeleccionado}"]`);
+    
+    if(tipoEnvio==="WhatsApp") {
+        const telefono = card.querySelector(".send-whatsapp").dataset.telefono;
+        window.open(`https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`, "_blank");
+    } else {
+        const email = card.querySelector(".send-email").dataset.email;
+        // Gmail con ventana de redacción prellenada
+        window.open(
+            `https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${encodeURIComponent("Comunicación desde administración")}&body=${encodeURIComponent(mensaje)}`,
+            "_blank"
+        );
+    }
+
+    mensajeModal.hide();
+});
+</script>
 </body>
 </html>

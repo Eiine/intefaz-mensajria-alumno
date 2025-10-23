@@ -1,54 +1,112 @@
+# seed.py
 import os
 import django
 import random
 from faker import Faker
+from datetime import datetime, timedelta
+from decimal import Decimal
 
+# ----------------------------------------
 # Configuración de Django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'interfas_mensajria.settings')  # ⚠ nombre real de tu proyecto
+# ----------------------------------------
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'interfas_mensajria.settings')
 django.setup()
 
-from mensajes.models import Alumno, TipoNotificacion, Notificacion
+from django.contrib.auth.models import User
+from mensajes.models import Carrera, PerfilAlumno, TipoNotificacion, Notificacion, Pago, MensajeInterno
 
 fake = Faker()
 
-# ------------------------------
-# 1️⃣ Crear tipos de notificación
-# ------------------------------
-tipos = ["Email", "SMS", "Push", "WhatsApp"]
+# ----------------------------------------
+# Limpiar datos anteriores (opcional)
+# ----------------------------------------
+MensajeInterno.objects.all().delete()
+Pago.objects.all().delete()
+Notificacion.objects.all().delete()
+TipoNotificacion.objects.all().delete()
+PerfilAlumno.objects.all().delete()
+Carrera.objects.all().delete()
+User.objects.filter(is_superuser=False).delete()
 
-for t in tipos:
-    TipoNotificacion.objects.get_or_create(nombre_tipo=t)
+# ----------------------------------------
+# Crear Carreras
+# ----------------------------------------
+carreras = []
+modalidades = ['Presencial', 'A distancia']
+for i in range(5):
+    carrera = Carrera.objects.create(
+        nombre=fake.word().title(),
+        modalidad=random.choice(modalidades),
+        descripcion=fake.text(max_nb_chars=100)
+    )
+    carreras.append(carrera)
 
-tipos_obj = list(TipoNotificacion.objects.all())
-
-# ------------------------------
-# 2️⃣ Crear 20 alumnos dummy
-# ------------------------------
+# ----------------------------------------
+# Crear Usuarios y PerfilAlumno
+# ----------------------------------------
 alumnos = []
+for i in range(10):
+    user = User.objects.create_user(
+        username=f"alumno{i}",
+        email=f"alumno{i}@example.com",
+        first_name=fake.first_name(),
+        last_name=fake.last_name(),
+        password='1234'
+    )
+    perfil = PerfilAlumno.objects.create(
+        user=user,
+        dni=fake.unique.numerify(text='########'),
+        telefono=fake.phone_number(),
+        direccion=fake.address(),
+        carrera=random.choice(carreras),
+        estado_documentacion=random.choice([True, False]),
+        estado_pago=random.choice([True, False])
+    )
+    alumnos.append(perfil)
 
-for _ in range(20):
-    alumno = Alumno.objects.create(
-    nombre=fake.first_name(),
-    apellido=fake.last_name(),
-    dni=str(fake.unique.random_number(digits=8, fix_len=True))[:20],
-    telefono=fake.phone_number()[:20],
-    direccion=fake.address()
-)
+# ----------------------------------------
+# Crear Tipos de Notificación
+# ----------------------------------------
+tipos = []
+nombres_tipos = ['Pago pendiente', 'Falta documentación', 'Clase cancelada', 'Examen', 'Recordatorio']
+for nombre in nombres_tipos:
+    tipo = TipoNotificacion.objects.create(nombre_tipo=nombre)
+    tipos.append(tipo)
 
-    alumnos.append(alumno)
+# ----------------------------------------
+# Crear Notificaciones
+# ----------------------------------------
+for i in range(20):
+    Notificacion.objects.create(
+        alumno=random.choice(alumnos),
+        tipo=random.choice(tipos),
+        estado_envio=random.choice(['Enviado', 'Pendiente', 'Fallido']),
+        mensaje=fake.text(max_nb_chars=200)
+    )
 
-# ------------------------------
-# 3️⃣ Crear notificaciones dummy
-# ------------------------------
-estados = ["Enviado", "Pendiente", "Error"]
+# ----------------------------------------
+# Crear Pagos
+# ----------------------------------------
+for i in range(20):
+    Pago.objects.create(
+        alumno=random.choice(alumnos),
+        fecha_pago=fake.date_between(start_date='-1y', end_date='today'),
+        monto=Decimal(f"{random.randint(1000,5000)}.00"),
+        estado_pago=random.choice(['Pagado', 'Pendiente', 'Vencido']),
+        descripcion=fake.text(max_nb_chars=100)
+    )
 
-for alumno in alumnos:
-    # Cada alumno recibe entre 1 y 3 notificaciones aleatorias
-    for _ in range(random.randint(1, 3)):
-        Notificacion.objects.create(
-            alumno=alumno,
-            tipo=random.choice(tipos_obj),
-            estado_envio=random.choice(estados)
-        )
+# ----------------------------------------
+# Crear Mensajes Internos
+# ----------------------------------------
+usuarios = list(User.objects.all())
+for i in range(15):
+    remitente, destinatario = random.sample(usuarios, 2)
+    MensajeInterno.objects.create(
+        remitente=remitente,
+        destinatario=destinatario,
+        mensaje=fake.text(max_nb_chars=200),
+        leido=random.choice([True, False])
+    )
 
-print("✅ Seed completado: 20 alumnos, tipos y notificaciones generadas")
+print("✅ Datos de prueba generados correctamente.")
