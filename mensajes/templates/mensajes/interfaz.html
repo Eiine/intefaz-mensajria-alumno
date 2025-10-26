@@ -38,7 +38,7 @@
 </head>
 <body>
     {% include "mensajes/navbar.html" %}
-
+  
     <main class="d-flex justify-content-center align-items-start p-4">
         <div class="container text-center">
             <h2 class="fw-bold text-dark mb-4">Lista de alumnos</h2>
@@ -210,7 +210,7 @@ const enviarModalBtn = document.getElementById('enviarModalBtn');
 // Función para crear notificación en Django
 async function crearNotificacion(tipo, alumnoId, mensaje) {
     try {
-        await fetch("{% url 'crear_notificacion' %}", {
+        const res = await fetch("{% url 'crear_notificacion' %}", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -223,11 +223,12 @@ async function crearNotificacion(tipo, alumnoId, mensaje) {
                 estado_envio: "Pendiente"
             })
         });
+        const data = await res.json();
+        if(!data.success) console.error(data.error);
     } catch (err) {
         console.error("Error al guardar notificación:", err);
     }
 }
-
 // Abrir modal al hacer clic
 document.querySelectorAll(".send-whatsapp, .send-email").forEach(btn => {
     btn.addEventListener("click", () => {

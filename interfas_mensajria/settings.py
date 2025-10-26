@@ -49,7 +49,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
+LOGIN_URL = '/'  # la ruta de tu login
+LOGIN_REDIRECT_URL = '/home/'  # a dónde redirigir después de loguearse
 ROOT_URLCONF = 'interfas_mensajria.urls'
 
 TEMPLATES = [
