@@ -46,7 +46,7 @@ def interfaz(request):
 
     return render(request, 'mensajes/interfaz.html', context)
 
-@login_required
+
 def notificaciones(request):
     alumnos = PerfilAlumno.objects.select_related('user', 'carrera').all()
     return render(request, 'mensajes/notificaciones.html',{"alumnos": alumnos})

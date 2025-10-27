@@ -15,7 +15,10 @@ django.setup()
 from django.contrib.auth.models import User
 from mensajes.models import Carrera, PerfilAlumno, TipoNotificacion, Notificacion, Pago, MensajeInterno
 
-fake = Faker()
+# ----------------------------------------
+# Inicializar Faker en español
+# ----------------------------------------
+fake = Faker('es_ES')
 
 # ----------------------------------------
 # Limpiar datos anteriores (opcional)
@@ -33,7 +36,7 @@ User.objects.filter(is_superuser=False).delete()
 # ----------------------------------------
 carreras = []
 modalidades = ['Presencial', 'A distancia']
-for i in range(5):
+for _ in range(5):
     carrera = Carrera.objects.create(
         nombre=fake.word().title(),
         modalidad=random.choice(modalidades),
@@ -67,27 +70,29 @@ for i in range(10):
 # ----------------------------------------
 # Crear Tipos de Notificación
 # ----------------------------------------
-tipos = []
+tipos_dict = {}  # para relacionar nombre -> objeto TipoNotificacion
 nombres_tipos = ['Pago pendiente', 'Falta documentación', 'Clase cancelada', 'Examen', 'Recordatorio']
 for nombre in nombres_tipos:
     tipo = TipoNotificacion.objects.create(nombre_tipo=nombre)
-    tipos.append(tipo)
+    tipos_dict[nombre] = tipo
 
 # ----------------------------------------
-# Crear Notificaciones
+# Crear Notificaciones con formato: "Alumno: Motivo"
 # ----------------------------------------
-for i in range(20):
+for _ in range(20):
+    alumno = random.choice(alumnos)
+    motivo = random.choice(nombres_tipos)  # se usa la lista de motivos
     Notificacion.objects.create(
-        alumno=random.choice(alumnos),
-        tipo=random.choice(tipos),
+        alumno=alumno,
+        tipo=tipos_dict[motivo],  # coincide tipo con motivo
         estado_envio=random.choice(['Enviado', 'Pendiente', 'Fallido']),
-        mensaje=fake.text(max_nb_chars=200)
+        mensaje=f"{alumno.user.first_name} {alumno.user.last_name}: {motivo}"
     )
 
 # ----------------------------------------
 # Crear Pagos
 # ----------------------------------------
-for i in range(20):
+for _ in range(20):
     Pago.objects.create(
         alumno=random.choice(alumnos),
         fecha_pago=fake.date_between(start_date='-1y', end_date='today'),
@@ -100,7 +105,7 @@ for i in range(20):
 # Crear Mensajes Internos
 # ----------------------------------------
 usuarios = list(User.objects.all())
-for i in range(15):
+for _ in range(15):
     remitente, destinatario = random.sample(usuarios, 2)
     MensajeInterno.objects.create(
         remitente=remitente,

@@ -1,26 +1,39 @@
- <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="#">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="#800000" xmlns="http://www.w3.org/2000/svg">
-                    <rect width="24" height="24" rx="4"/>
-                </svg>
+<!-- navbar.html -->
+<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="#800000" xmlns="http://www.w3.org/2000/svg">
+                <rect width="24" height="24" rx="4"/>
+            </svg>
+        </a>
+
+        <div class="flex-grow-1"></div>
+
+        <!-- Icono de perfil con dropdown -->
+        <div class="dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" id="perfilDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-person-circle fs-5"></i>
             </a>
-
-            <div class="flex-grow-1"></div>
-
-            <!-- Icono de perfil con dropdown -->
-            <div class="dropdown">
-                <a class="nav-link dropdown-toggle" href="#" role="button" id="perfilDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="bi bi-person-circle fs-5"></i>
-                </a>
-                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="perfilDropdown">
-                    <li><a class="dropdown-item" href="/">Inicio</a></li>
-                    <li><a class="dropdown-item active" href="{% url 'notificaciones' %}">Notificaciones</a></li>
-                    <li><a class="dropdown-item" href="#">Configuraciones</a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" href="{% url 'logout' %}">Cerrar sesión</a></li>
-                </ul>
-            </div>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="perfilDropdown">
+                <li><a class="dropdown-item" href="/">Inicio</a></li>
+                <li><a class="dropdown-item active" href="{% url 'notificaciones' %}">Notificaciones</a></li>
+                <li><a class="dropdown-item active" href="{% url 'panel_admin' %}">Panel admin</a></li>
+                <li><a class="dropdown-item" href="#">Configuraciones</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{% url 'logout' %}">Cerrar sesión</a></li>
+            </ul>
         </div>
-    </nav>
+    </div>
+
+    <style>
+        /* Quitar color de fondo automático de los items activos */
+        .dropdown-menu .dropdown-item.active {
+            background-color: transparent;
+            color: inherit;
+        }
+        /* Mantener color al pasar el mouse */
+        .dropdown-menu .dropdown-item:hover {
+            background-color: #f0f0f0;
+        }
+    </style>
+</nav>
