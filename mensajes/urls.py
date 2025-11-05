@@ -8,6 +8,7 @@ urlpatterns = [
     path("logout/", views.logout_view, name="logout"),
     path('home/',views.listar_alumnos, name='alumnos_lista'),
     path('panel/', views.panel_admin, name='panel_admin'),
+    path('config/', views.config, name='configuraciones'),
     path('ajax/notificaciones/<int:alumno_id>/', views.get_notificaciones, name='ajax_notificaciones'),
     path('notificaciones/', views.notificaciones, name='notificaciones'),
     path('notificaciones/crear/', views.crear_notificacion, name='notificaciones_crear'),

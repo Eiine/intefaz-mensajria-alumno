@@ -210,3 +210,7 @@ def ajax_notificaciones(request, alumno_id):
         ]
     }
     return JsonResponse(data)
+
+@login_required
+def config(request):
+    return render(request, 'mensajes/Configuraciones.html')
