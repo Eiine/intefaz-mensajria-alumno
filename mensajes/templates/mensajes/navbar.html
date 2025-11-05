@@ -1,21 +1,24 @@
-<!-- navbar.html -->
-<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
+{% load static %}
+<nav class="navbar navbar-expand-lg" style="background-color: #8B0000;">
     <div class="container-fluid">
-        <a class="navbar-brand" href="#">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="#800000" xmlns="http://www.w3.org/2000/svg">
-                <rect width="24" height="24" rx="4"/>
-            </svg>
+        
+        <a class="navbar-brand d-flex align-items-center" href="#">
+            <img src='{% static "descarga.png" %}' alt="Logo" width="40" height="40" style="border-radius: 50%;">
+            
+            <span class="navbar-text fw-bold fs-5 ms-2" style="color: white;">
+                Instituto del Milagro
+            </span>
         </a>
 
         <div class="flex-grow-1"></div>
 
-        <!-- Icono de perfil con dropdown -->
         <div class="dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button" id="perfilDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="bi bi-person-circle fs-5"></i>
+            <a class="nav-link dropdown-toggle" style="color: white;" href="#" role="button" id="perfilDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-person-circle fs-5" style="color: white;"></i>
             </a>
+
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="perfilDropdown">
-                <li><a class="dropdown-item" href="/">Inicio</a></li>
+                <li><a class="dropdown-item" href="{% url 'alumnos_lista' %}">Inicio</a></li>
                 <li><a class="dropdown-item active" href="{% url 'notificaciones' %}">Notificaciones</a></li>
                 <li><a class="dropdown-item active" href="{% url 'panel_admin' %}">Panel admin</a></li>
                 <li><a class="dropdown-item" href="#">Configuraciones</a></li>
@@ -28,12 +31,13 @@
     <style>
         /* Quitar color de fondo automático de los items activos */
         .dropdown-menu .dropdown-item.active {
-            background-color: transparent;
-            color: inherit;
+            background-color: transparent !important;
+            color: inherit !important;
         }
         /* Mantener color al pasar el mouse */
         .dropdown-menu .dropdown-item:hover {
-            background-color: #f0f0f0;
+            background-color: #8B0000 !important; /* Usar el color vinotinto para el hover */
+            color: white !important; /* Asegurar que el texto se vea blanco */
         }
     </style>
 </nav>
