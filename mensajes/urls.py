@@ -18,6 +18,7 @@ urlpatterns = [
     path('alumnos/<int:pk>/editar/', views.interfaz, name='perfil_alumno_editar'),
     path('alumnos/<int:pk>/eliminar/', views.interfaz, name='perfil_alumno_eliminar'),
     path('alumnos/<int:pk>/', views.interfaz, name='perfil_alumno_detalle'),
+    path('api/mensajes/', views.api_mensajes, name='api_mensajes'),
 
     # CRUD Notificacion
 
