@@ -1,12 +1,17 @@
 from django.urls import path
 from . import views
-
+from django.contrib.auth.decorators import login_required
 urlpatterns = [
 
-    path('', views.listar_alumnos, name='alumnos_lista'),
+    #Login
+    path('', views.login_view, name='login'),
+    path("logout/", views.logout_view, name="logout"),
+    path('home/',views.listar_alumnos, name='alumnos_lista'),
+    path('panel/', views.panel_admin, name='panel_admin'),
+    path('ajax/notificaciones/<int:alumno_id>/', views.get_notificaciones, name='ajax_notificaciones'),
     path('notificaciones/', views.notificaciones, name='notificaciones'),
+    path('notificaciones/crear/', views.crear_notificacion, name='notificaciones_crear'),
      # CRUD PerfilAlumno
-    path('alumnos/', views.interfaz, name='alumnos_lista'),
     path('filtrar_alumnos/', views.filtrar_alumnos, name='filtrar_alumnos'),
     path('alumnos/crear/', views.interfaz, name='perfil_alumno_crear'),
     path('alumnos/<int:pk>/editar/', views.interfaz, name='perfil_alumno_editar'),
@@ -14,8 +19,8 @@ urlpatterns = [
     path('alumnos/<int:pk>/', views.interfaz, name='perfil_alumno_detalle'),
 
     # CRUD Notificacion
-    path('notificaciones/', views.listar_notificaciones, name='listar_notificaciones'),
+
     path('notificaciones/crear/', views.crear_notificacion, name='crear_notificacion'),
-    path('notificaciones/editar/<int:pk>/', views.editar_notificacion, name='editar_notificacion'),
-    path('notificaciones/eliminar/<int:pk>/', views.eliminar_notificacion, name='eliminar_notificacion'),
+    
+    
 ]
