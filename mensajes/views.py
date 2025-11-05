@@ -210,6 +210,23 @@ def ajax_notificaciones(request, alumno_id):
         ]
     }
     return JsonResponse(data)
+def api_mensajes(request, usuario_id):
+    usuario = User.objects.get(id=usuario_id)
+
+    mensajes = MensajeInterno.objects.filter(
+        remitente=usuario
+    ).union(
+        MensajeInterno.objects.filter(destinatario=usuario)
+    ).order_by('fecha_envio')
+
+    data = [{
+        'remitente': m.remitente.username,
+        'destinatario': m.destinatario.username,
+        'mensaje': m.mensaje,
+        'fecha_envio': m.fecha_envio.strftime('%d/%m/%Y %H:%M')
+    } for m in mensajes]
+
+    return JsonResponse(data, safe=False)
 
 @login_required
 def config(request):
