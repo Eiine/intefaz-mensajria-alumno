@@ -78,7 +78,9 @@ class MensajeInterno(models.Model):
     destinatario = models.ForeignKey('PerfilAlumno', on_delete=models.CASCADE, related_name='mensajes_recibidos')
     mensaje = models.TextField()
     fecha_envio = models.DateTimeField(auto_now_add=True)
+    
+    # Campo agregado para evitar error NOT NULL
+    leido = models.BooleanField(default=False)  # valor por defecto
 
     def __str__(self):
         return f"De {self.remitente} a {self.destinatario}: {self.mensaje[:30]}"
-

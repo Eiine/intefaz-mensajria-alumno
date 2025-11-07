@@ -11,7 +11,7 @@ from django.views.decorators.cache import never_cache
 from django.http import JsonResponse
 import json
 from django.db.models import Q
-from djgango.contrib.auth.models import User
+from django.contrib.auth.models import User
 
 def login_view(request):
     if request.method == 'POST':
@@ -226,7 +226,6 @@ def mensajes_view(request):
 
     return render(request, "mensajes/mensajeria.html", {"User": perfiles})
 
-def mensajes_usuario(request, usuario_id):
     """
     Devuelve todos los mensajes entre el usuario logueado y el usuario seleccionado.
     """
@@ -251,37 +250,34 @@ def mensajes_usuario(request, usuario_id):
     ]
 
     return JsonResponse(data, safe=False)
-def obtener_mensajes(request, usuario_id):
+def obtener_mensajes(request):
     try:
-        # Verificamos que el usuario exista
-        otro_usuario = User.objects.get(id=usuario_id)
+        mensajes = MensajeInterno.objects.all().order_by("fecha_envio")
 
-        mensajes = MensajeInterno.objects.filter(
-            remitente__in=[request.user, otro_usuario],
-            destinatario__in=[request.user, otro_usuario]
-        ).order_by("fecha_envio")
+        data = []
+        for m in mensajes:
+            try:
+                remitente_nombre = f"{m.remitente.user.first_name} {m.remitente.user.last_name}"
+                destinatario_nombre = f"{m.destinatario.user.first_name} {m.destinatario.user.last_name}"
 
-        data = [
-            {
-                "id": m.id,
-                "remitente_id": m.remitente.id,
-                "destinatario_id": m.destinatario.id,
-                "remitente": m.remitente.username,
-                "destinatario": m.destinatario.username,
-                "mensaje": m.mensaje,
-                "fecha_envio": m.fecha_envio.strftime("%Y-%m-%d %H:%M"),
-            }
-            for m in mensajes
-        ]
+                data.append({
+                    "id": m.id,
+                    "remitente_id": m.remitente.id,
+                    "destinatario_id": m.destinatario.id,
+                    "remitente": remitente_nombre,
+                    "destinatario": destinatario_nombre,
+                    "mensaje": m.mensaje,
+                    "fecha_envio": m.fecha_envio.strftime("%Y-%m-%d %H:%M"),
+                })
+            except PerfilAlumno.DoesNotExist:
+                # Saltamos mensajes cuyo remitente o destinatario ya no existe
+                continue
 
         return JsonResponse(data, safe=False)
 
-    except User.DoesNotExist:
-        return JsonResponse({"error": "El usuario no existe."}, status=404)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
-
-
+    
 @login_required
 def enviar_mensaje(request):
     if request.method != "POST":
