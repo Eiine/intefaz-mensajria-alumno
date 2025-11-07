@@ -10,6 +10,9 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import never_cache
 from django.http import JsonResponse
 import json
+from django.db.models import Q
+from djgango.contrib.auth.models import User
+
 def login_view(request):
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -210,24 +213,103 @@ def ajax_notificaciones(request, alumno_id):
         ]
     }
     return JsonResponse(data)
-def api_mensajes(request, usuario_id):
-    usuario = User.objects.get(id=usuario_id)
-
-    mensajes = MensajeInterno.objects.filter(
-        remitente=usuario
-    ).union(
-        MensajeInterno.objects.filter(destinatario=usuario)
-    ).order_by('fecha_envio')
-
-    data = [{
-        'remitente': m.remitente.username,
-        'destinatario': m.destinatario.username,
-        'mensaje': m.mensaje,
-        'fecha_envio': m.fecha_envio.strftime('%d/%m/%Y %H:%M')
-    } for m in mensajes]
-
-    return JsonResponse(data, safe=False)
 
 @login_required
 def config(request):
     return render(request, 'mensajes/Configuraciones.html')
+def mensajes_view(request):
+    """
+    Vista principal: muestra todos los usuarios (PerfilAlumno)
+    que tienen al menos un mensaje enviado o recibido.
+    """
+    perfiles = PerfilAlumno.objects.all()
+
+    return render(request, "mensajes/mensajeria.html", {"User": perfiles})
+
+def mensajes_usuario(request, usuario_id):
+    """
+    Devuelve todos los mensajes entre el usuario logueado y el usuario seleccionado.
+    """
+    usuario_actual = request.user
+
+    mensajes = MensajeInterno.objects.filter(
+        remitente__in=[usuario_actual, usuario_id],
+        destinatario__in=[usuario_actual, usuario_id]
+    ).order_by('fecha_envio')
+
+    data = [
+        {
+            "id": m.id,
+            "remitente": m.remitente.username,
+            "destinatario": m.destinatario.username,
+            "remitente_id": m.remitente.id,
+            "destinatario_id": m.destinatario.id,
+            "mensaje": m.mensaje,
+            "fecha_envio": m.fecha_envio.strftime("%Y-%m-%d %H:%M:%S"),
+        }
+        for m in mensajes
+    ]
+
+    return JsonResponse(data, safe=False)
+def obtener_mensajes(request, usuario_id):
+    try:
+        # Verificamos que el usuario exista
+        otro_usuario = User.objects.get(id=usuario_id)
+
+        mensajes = MensajeInterno.objects.filter(
+            remitente__in=[request.user, otro_usuario],
+            destinatario__in=[request.user, otro_usuario]
+        ).order_by("fecha_envio")
+
+        data = [
+            {
+                "id": m.id,
+                "remitente_id": m.remitente.id,
+                "destinatario_id": m.destinatario.id,
+                "remitente": m.remitente.username,
+                "destinatario": m.destinatario.username,
+                "mensaje": m.mensaje,
+                "fecha_envio": m.fecha_envio.strftime("%Y-%m-%d %H:%M"),
+            }
+            for m in mensajes
+        ]
+
+        return JsonResponse(data, safe=False)
+
+    except User.DoesNotExist:
+        return JsonResponse({"error": "El usuario no existe."}, status=404)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+@login_required
+def enviar_mensaje(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "Método no permitido."}, status=405)
+
+    try:
+        data = json.loads(request.body)
+        destinatario_id = data.get("destinatario_id")
+        mensaje_texto = data.get("mensaje")
+
+        if not destinatario_id or not mensaje_texto:
+            return JsonResponse({"error": "Datos incompletos."}, status=400)
+
+        destinatario = User.objects.get(id=destinatario_id)
+
+        nuevo_mensaje = MensajeInterno.objects.create(
+            remitente=request.user,
+            destinatario=destinatario,
+            mensaje=mensaje_texto
+        )
+
+        return JsonResponse({
+            "success": True,
+            "mensaje": "Mensaje enviado correctamente.",
+            "id": nuevo_mensaje.id
+        })
+
+    except User.DoesNotExist:
+        return JsonResponse({"error": "El destinatario no existe."}, status=404)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)

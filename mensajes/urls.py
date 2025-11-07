@@ -18,8 +18,11 @@ urlpatterns = [
     path('alumnos/<int:pk>/editar/', views.interfaz, name='perfil_alumno_editar'),
     path('alumnos/<int:pk>/eliminar/', views.interfaz, name='perfil_alumno_eliminar'),
     path('alumnos/<int:pk>/', views.interfaz, name='perfil_alumno_detalle'),
-    path('api/mensajes/', views.api_mensajes, name='api_mensajes'),
-
+     path("mensajes/", views.mensajes_view, name="mensajes"),
+     path("api/mensajes/<int:usuario_id>/", views.mensajes_usuario, name="mensajes_usuario"),
+     path('api/mensajes/enviar/', views.enviar_mensaje, name='enviar_mensaje'),
+     path("api/mensajes/usuario/<int:usuario_id>/", views.obtener_mensajes, name="obtener_mensajes_usuario"),
+     
     # CRUD Notificacion
 
     path('notificaciones/crear/', views.crear_notificacion, name='crear_notificacion'),
