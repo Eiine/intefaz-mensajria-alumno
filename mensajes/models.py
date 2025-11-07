@@ -70,12 +70,15 @@ class Pago(models.Model):
 # ----------------------------------------
 # Tabla: MensajeInterno
 # ----------------------------------------
+from django.db import models
+from django.contrib.auth.models import User
+
 class MensajeInterno(models.Model):
-    remitente = models.ForeignKey(User, on_delete=models.CASCADE, related_name='mensajes_enviados')
-    destinatario = models.ForeignKey(User, on_delete=models.CASCADE, related_name='mensajes_recibidos')
-    fecha_envio = models.DateTimeField(auto_now_add=True)
+    remitente = models.ForeignKey('PerfilAlumno', on_delete=models.CASCADE, related_name='mensajes_enviados')
+    destinatario = models.ForeignKey('PerfilAlumno', on_delete=models.CASCADE, related_name='mensajes_recibidos')
     mensaje = models.TextField()
-    leido = models.BooleanField(default=False)
+    fecha_envio = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"De {self.remitente} a {self.destinatario} - {self.fecha_envio}"
+        return f"De {self.remitente} a {self.destinatario}: {self.mensaje[:30]}"
+
