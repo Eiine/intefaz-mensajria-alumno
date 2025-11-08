@@ -12,25 +12,40 @@
             margin: 0;
         }
         .mensaje-container {
-            display: flex;
-            justify-content: center; /* horizontal */
-            align-items: center;    /* vertical */
-            height: calc(100% - 56px); /* resta altura navbar */
-            padding: 20px;
-        }
-        #mensajeTextarea {
-            width: 90%;
-            max-width: 800px;
-            height: 400px;
-            font-size: 1.1rem;
-            line-height: 1.5;
-            padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #ced4da;
-            resize: vertical;
-        }
+    display: flex;
+    flex-direction: column; /* apila los elementos */
+    align-items: center;    /* centrado horizontal */
+    justify-content: flex-start; /* evita que se mueva hacia arriba */
+    height: calc(100% - 56px);
+    padding: 20px;
+    margin-left: 220px; /* espacio para el sidebar */
+}
+
+.mensaje-wrapper {
+    max-width: 800px;
+    margin: 0 auto; /* centrado horizontal */
+}
+
+.tag-group {
+    margin-bottom: 40px; /* espacio grande entre tags y textarea */
+}
+
+#mensajeTextarea {
+    width: 100%;
+    height: 400px; /* mantiene altura fija */
+    font-size: 1.1rem;
+    line-height: 1.5;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #ced4da;
+    resize: vertical;
+}
         .tag-btn {
             min-width: 130px;
+        }
+        #carreraSelect {
+            margin-top: 15px;
+            display: none; /* oculto por defecto */
         }
     </style>
 </head>
@@ -38,13 +53,13 @@
 
     <!-- Navbar -->
     {% include "mensajes/navbar.html" %}
-    
+    {% include "mensajes/sidebar.html" %}
     <!-- Contenedor centrado -->
     <div class="mensaje-container">
         <div class="text-center w-100">
 
             <!-- Selector de Tags -->
-            <div class="mb-4">
+            <div class="mb-2">
                 <span class="fw-bold me-2">Seleccionar Tag:</span>
                 <div class="btn-group" role="group">
                     <button type="button" class="btn btn-warning btn-sm tag-btn" data-msg="Aviso de Parcial Próximo:\n\nEstimado alumno,\n\nLe recordamos que se aproxima la fecha de su próximo parcial. Por favor, verifique el cronograma de exámenes y prepárese con anticipación para presentarse en el día y horario correspondiente.\n\nGracias por su atención.">Parcial</button>
@@ -52,13 +67,26 @@
                     <button type="button" class="btn btn-danger btn-sm tag-btn" data-msg="Nota de Tarea:\n\nEstimado alumno,\n\nRecuerde que tiene tareas pendientes que deben ser entregadas en las fechas indicadas en la plataforma. Revise los detalles de cada asignatura.\n\nAtentamente.">Tarea</button>
                     <button type="button" class="btn btn-secondary btn-sm tag-btn" data-msg="Circular:\n\nEstimados alumnos,\n\nSe informa sobre las últimas actividades y comunicados importantes para todos los estudiantes. Por favor, tomen nota de los anuncios y sigan las instrucciones proporcionadas.\n\nGracias.">Circular</button>
                 </div>
+
+                <!-- Select de Carreras (justo debajo de las tags) -->
+                <div id="carreraSelect" class="mt-3 mb-2">
+                    <label for="carrera" class="form-label fw-bold">Seleccionar Carrera:</label>
+                    <select id="carrera" class="form-select w-50 mx-auto">
+                        <option value="">-- Elige una carrera --</option>
+                        <option value="Informatica">Informática</option>
+                        <option value="Matematicas">Matemáticas</option>
+                        <option value="Medicina">Medicina</option>
+                        <option value="Historia">Historia</option>
+                        <option value="Todas">Todas</option>
+                    </select>
+                </div>
             </div>
 
             <!-- Textarea -->
             <div>
                 <textarea id="mensajeTextarea" placeholder="Selecciona un tag para llenar el mensaje automáticamente"></textarea>
             </div>
-
+            <div><button>Enviar</button></div>
         </div>
     </div>
 
@@ -66,11 +94,16 @@
     <script>
         const tagButtons = document.querySelectorAll('.tag-btn');
         const mensajeTextarea = document.getElementById('mensajeTextarea');
+        const carreraSelectDiv = document.getElementById('carreraSelect');
 
         tagButtons.forEach(btn => {
             btn.addEventListener('click', () => {
+                // Llenar textarea
                 mensajeTextarea.value = btn.getAttribute('data-msg').replace(/\\n/g, '\n');
-                mensajeTextarea.focus(); // enfoca el textarea al seleccionar
+                mensajeTextarea.focus();
+
+                // Mostrar select debajo de las tags
+                carreraSelectDiv.style.display = 'block';
             });
         });
     </script>
