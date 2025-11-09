@@ -28,7 +28,12 @@
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="perfilDropdown">
                 <li><a class="dropdown-item" href="{% url 'alumnos_lista' %}">Inicio</a></li>
                 <li><a class="dropdown-item active" href="{% url 'notificaciones' %}">Notificaciones</a></li>
-                <li><a class="dropdown-item active" href="{% url 'panel_admin' %}">Panel admin</a></li>
+                   {% if user.is_staff %}
+                     <li><a class="dropdown-item active" href="{% url 'panel_admin' %}">Panel admin</a></li>
+                   {% else %}
+                    <li><a class="dropdown-item active" href="{% url 'panel_admin' %}">Panel usuario</a></li>
+                   {% endif %}
+                
                 <li><a class="dropdown-item" href="{% url 'configuraciones' %}">Configuraciones</a></li>
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item" href="{% url 'logout' %}">Cerrar sesión</a></li>

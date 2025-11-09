@@ -44,16 +44,24 @@ class PerfilAlumno(models.Model):
 # ----------------------------------------
 class TipoNotificacion(models.Model):
     nombre_tipo = models.CharField(max_length=100)
+    canal = models.CharField(max_length=100, default='Email')
+    fecha = models.DateField(auto_now_add=True)
+    carrera = models.ForeignKey(
+        'Carrera',
+        on_delete=models.CASCADE,
+        related_name='notificaciones',
+        null=True,      # ✅ permite valores nulos
+        blank=True      # ✅ no lo exige en formularios
+    )
 
     def __str__(self):
-        return self.nombre_tipo
-
+        return f"{self.nombre_tipo} - {self.carrera.nombre if self.carrera else 'Sin carrera'}"
 
 # ----------------------------------------
 # Tabla: Notificacion
 # ----------------------------------------
 class Notificacion(models.Model):
-    alumno = models.ForeignKey(PerfilAlumno, on_delete=models.CASCADE)
+    alumnos = models.ManyToManyField('PerfilAlumno')
     tipo = models.ForeignKey(TipoNotificacion, on_delete=models.CASCADE)
     fecha_envio = models.DateTimeField(auto_now_add=True)
     estado_envio = models.CharField(max_length=50)  # "Enviado", "Fallido", "Pendiente"

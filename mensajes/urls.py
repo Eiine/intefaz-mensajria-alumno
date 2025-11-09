@@ -21,7 +21,7 @@ urlpatterns = [
      path("mensajes/", views.mensajes_view, name="mensajes"),
      path('api/mensajes/enviar/', views.enviar_mensaje, name='enviar_mensaje'),
      path("api/mensajes/", views.obtener_mensajes, name="obtener_mensajes_usuario"),
-     
+     path('api/actualizar-preferencia/', views.actualizar_preferencia, name='actualizar_preferencia'),
     # CRUD Notificacion
 
     path('notificaciones/crear/', views.crear_notificacion, name='crear_notificacion'),

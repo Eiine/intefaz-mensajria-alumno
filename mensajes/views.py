@@ -12,7 +12,7 @@ from django.http import JsonResponse
 import json
 from django.db.models import Q
 from django.contrib.auth.models import User
-
+from .models import Preferencia
 def login_view(request):
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -169,7 +169,7 @@ def panel_admin(request):
     # Traer todas las notificaciones del alumno seleccionado
     notificaciones = []
     if alumno_seleccionado:
-        notificaciones = Notificacion.objects.filter(alumno=alumno_seleccionado).order_by('-fecha_envio')
+        notificaciones = Notificacion.objects.filter(alumnos=alumno_seleccionado).order_by('-fecha_envio')
 
     context = {
         'alumnos': alumnos,
@@ -216,7 +216,16 @@ def ajax_notificaciones(request, alumno_id):
 
 @login_required
 def config(request):
-    return render(request, 'mensajes/Configuraciones.html')
+    perfil = request.user.perfilalumno
+
+    # Obtener o crear preferencias del usuario
+    pref, created = Preferencia.objects.get_or_create(alumno=perfil)
+
+    # Pasar los valores al template
+    contexto = {
+        "pref": pref
+    }
+    return render(request, 'mensajes/Configuraciones.html', contexto)
 def mensajes_view(request):
     """
     Vista principal: muestra todos los usuarios (PerfilAlumno)
@@ -309,3 +318,34 @@ def enviar_mensaje(request):
         return JsonResponse({"error": "El destinatario no existe."}, status=404)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
+
+
+def actualizar_preferencia(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            # Obtener el perfil del alumno
+            perfil = request.user.perfilalumno
+
+            # Obtener o crear la Preferencia
+            pref, created = Preferencia.objects.get_or_create(alumno=perfil)
+
+            # Actualizar campos según los datos recibidos
+            pref.tareas_pendientes = data.get("config_tareas", pref.tareas_pendientes)
+            pref.calificaciones_publicadas = data.get("config_calificaciones", pref.calificaciones_publicadas)
+            pref.eventos_academicos = data.get("config_eventos", pref.eventos_academicos)
+            pref.anuncios_profesor = data.get("config_anuncios", pref.anuncios_profesor)
+            pref.habilitar_agrupadas = data.get("config_agrupadas", pref.habilitar_agrupadas)
+            pref.aplicacion_movil = data.get("canal_movil", pref.aplicacion_movil)
+            pref.prioridad_notificaciones = data.get("prioridad", pref.prioridad_notificaciones)
+
+            # Guardar cambios
+            pref.save()
+
+            return JsonResponse({"success": True, "created": created})
+
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)})
+
+    return JsonResponse({"success": False, "error": "Método no permitido"})

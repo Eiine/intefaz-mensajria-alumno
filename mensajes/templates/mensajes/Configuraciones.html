@@ -8,94 +8,31 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     
     <style>
-        /* Estilos Generales */
         body { background-color: #f8f9fa; }
         main { min-height: 90vh; }
         .container { max-width: 700px; }
-        .card-config { 
-            border: 1px solid #d44949; 
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-        }
-        .section-title {
-            color: #CC0000; 
-            font-weight: bold;
-            margin-bottom: 15px;
-        }
-        .card-footer-custom {
-            display: flex;
-            justify-content: flex-end;
-            padding: 1rem 0; /* Ajuste: quitamos la línea superior y ajustamos padding */
-        }
-        
-        /* --- Componente del Toggle Switch PERSONALIZADO (Mantiene el movimiento y el color rojo) --- */
-        .toggle-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid #eee; /* Separador sutil */
-        }
-        .toggle-container:last-of-type {
-            border-bottom: none;
-        }
-        
+        .card-config { border: 1px solid #d44949; box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075); }
+        .section-title { color: #CC0000; font-weight: bold; margin-bottom: 15px; }
+        .card-footer-custom { display: flex; justify-content: flex-end; padding: 1rem 0; }
+        .toggle-container { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; }
+        .toggle-container:last-of-type { border-bottom: none; }
         .toggle-switch { display: none; }
-
-        /* Estilo del riel (la barra roja o gris) */
-        .toggle-label {
-            display: block;
-            width: 45px; height: 25px; 
-            background-color: #ccc; 
-            border-radius: 15px; 
-            cursor: pointer;
-            position: relative;
-            transition: background-color 0.3s ease; 
-            flex-shrink: 0; /* Evita que el switch se estire */
-        }
-
-        /* Estilo del "pulgar" (el círculo que se mueve) */
-        .toggle-label::after {
-            content: '';
-            position: absolute;
-            top: 2px; left: 2px;
-            width: 21px; height: 21px;
-            background-color: white;
-            border-radius: 50%; 
-            box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
-            transition: transform 0.3s ease; /* LA CLAVE DEL MOVIMIENTO */
-        }
-
-        /* Estado: CHEQUEADO (Activado) */
+        .toggle-label { display: block; width: 45px; height: 25px; background-color: #ccc; border-radius: 15px; cursor: pointer; position: relative; transition: background-color 0.3s ease; flex-shrink: 0; }
+        .toggle-label::after { content: ''; position: absolute; top: 2px; left: 2px; width: 21px; height: 21px; background-color: white; border-radius: 50%; box-shadow: 0 0 5px rgba(0,0,0,0.2); transition: transform 0.3s ease; }
         .toggle-switch:checked + .toggle-label { background-color: #CC0000; }
-
-        /* Posición: CHEQUEADO (Mueve el pulgar a la derecha) */
         .toggle-switch:checked + .toggle-label::after { transform: translateX(20px); }
-        
-        /* Estilos para el slider de prioridad (optimizado para Bootstrap) */
         .slider-wrap { position: relative; }
-        .slider-wrap::before {
-            content: 'Nivel actual: ' attr(data-nivel);
-            position: absolute;
-            left: 0;
-            top: -5px;
-            font-size: 0.9em;
-            color: #6c757d;
-        }
-        /* Personalizar la barra del slider para el color rojo */
-        .form-range {
-             /* Esto será controlado por JS para el color de progreso */
-            background-color: transparent !important; 
-        }
-
+        .slider-wrap::before { content: 'Nivel actual: ' attr(data-nivel); position: absolute; left: 0; top: -5px; font-size: 0.9em; color: #6c757d; }
+        .form-range { background-color: transparent !important; }
     </style>
 </head>
 <body>
-     {% include "mensajes/navbar.html" %}
+    {% include "mensajes/navbar.html" %}
     <main class="d-flex justify-content-center py-5">
         <div class="container">
-
             <h2 class="fw-bold text-dark mb-4"><i class="bi bi-gear-fill me-2"></i>Configuración de Notificaciones</h2>
 
+            <!-- Preferencias Generales -->
             <div class="card p-4 mb-4 card-config">
                 <h4 class="section-title"><i class="bi bi-bookmark-star-fill me-2"></i>Preferencias Generales</h4>
                 <p class="text-muted">Activa o desactiva los tipos de notificaciones que deseas recibir.</p>
@@ -105,7 +42,7 @@
                         <p class="mb-0 fw-bold">Tareas Pendientes</p>
                         <small class="text-muted d-block">Recibe alertas sobre entregas próximas y tareas asignadas.</small>
                     </div>
-                    <input type="checkbox" id="tareas" name="config_tareas" class="toggle-switch" checked>
+                    <input type="checkbox" id="tareas" name="config_tareas" class="toggle-switch" {% if pref.tareas_pendientes %}checked{% endif %}>
                     <label for="tareas" class="toggle-label"></label>
                 </div>
                 
@@ -114,7 +51,7 @@
                         <p class="mb-0 fw-bold">Calificaciones Publicadas</p>
                         <small class="text-muted d-block">Sé el primero en saber cuándo tus calificaciones estén disponibles.</small>
                     </div>
-                    <input type="checkbox" id="calificaciones" name="config_calificaciones" class="toggle-switch" checked>
+                    <input type="checkbox" id="calificaciones" name="config_calificaciones" class="toggle-switch" {% if pref.calificaciones_publicadas %}checked{% endif %}>
                     <label for="calificaciones" class="toggle-label"></label>
                 </div>
 
@@ -123,7 +60,7 @@
                         <p class="mb-0 fw-bold">Eventos Académicos</p>
                         <small class="text-muted d-block">Notificaciones sobre seminarios, talleres y fechas importantes.</small>
                     </div>
-                    <input type="checkbox" id="eventos" name="config_eventos" class="toggle-switch" checked>
+                    <input type="checkbox" id="eventos" name="config_eventos" class="toggle-switch" {% if pref.eventos_academicos %}checked{% endif %}>
                     <label for="eventos" class="toggle-label"></label>
                 </div>
 
@@ -132,26 +69,27 @@
                         <p class="mb-0 fw-bold">Anuncios del Profesor</p>
                         <small class="text-muted d-block">Mantente informado sobre las comunicaciones importantes de tus profesores.</small>
                     </div>
-                    <input type="checkbox" id="anuncios" name="config_anuncios" class="toggle-switch" checked>
+                    <input type="checkbox" id="anuncios" name="config_anuncios" class="toggle-switch" {% if pref.anuncios_profesor %}checked{% endif %}>
                     <label for="anuncios" class="toggle-label"></label>
                 </div>
-
             </div>
 
+            <!-- Horarios de Notificación Agrupadas -->
             <div class="card p-4 mb-4 card-config">
                 <h4 class="section-title"><i class="bi bi-clock-fill me-2"></i>Horarios de Notificación Agrupadas</h4>
-                <p class="text-muted">Configura un horario para recibir un resumen de notificaciones, evitando interrupciones frecuentes.</p>
+                <p class="text-muted">Configura un horario para recibir un resumen de notificaciones.</p>
                 
                 <div class="toggle-container border-bottom-0">
                     <div class="me-3">
                         <p class="mb-0 fw-bold">Habilitar Notificaciones Agrupadas</p>
                         <small class="text-muted d-block">Recibe todas tus notificaciones importantes en un solo momento del día.</small>
                     </div>
-                    <input type="checkbox" id="agrupadas" name="config_agrupadas" class="toggle-switch" checked>
+                    <input type="checkbox" id="agrupadas" name="config_agrupadas" class="toggle-switch" {% if pref.habilitar_agrupadas %}checked{% endif %}>
                     <label for="agrupadas" class="toggle-label"></label>
                 </div>
             </div>
 
+            <!-- Canales y Prioridad -->
             <div class="card p-4 mb-4 card-config">
                 <h4 class="section-title"><i class="bi bi-send-check-fill me-2"></i>Canales y Prioridad</h4>
                 <p class="text-muted">Elige cómo y con qué urgencia deseas recibir tus notificaciones.</p>
@@ -164,7 +102,7 @@
                     </label>
                 </div>
                 <div class="form-check mb-4">
-                    <input class="form-check-input" type="checkbox" value="movil" id="canal-movil" checked>
+                    <input class="form-check-input" type="checkbox" value="movil" id="canal-movil" {% if pref.aplicacion_movil %}checked{% endif %}>
                     <label class="form-check-label" for="canal-movil">
                          <i class="bi bi-phone-fill text-danger me-1"></i> Aplicación Móvil
                     </label>
@@ -173,19 +111,13 @@
                 <p class="fw-bold mb-2">Prioridad de Notificaciones</p>
                 <small class="text-muted d-block mb-3">Ajusta el nivel general de importancia para todas las alertas (1 = baja, 100 = alta).</small>
 
-                <div class="slider-wrap" data-nivel="50">
-                    <input type="range" min="1" max="100" value="50" class="form-range" id="prioridad-slider" name="config_prioridad">
+                <div class="slider-wrap" data-nivel="{{ pref.prioridad_notificaciones }}">
+                    <input type="range" min="1" max="100" value="{{ pref.prioridad_notificaciones }}" class="form-range" id="prioridad-slider" name="config_prioridad">
                 </div>
                 <div class="d-flex justify-content-between mt-1">
                     <small class="text-muted">Baja (1)</small>
                     <small class="text-muted">Alta (100)</small>
                 </div>
-                
-            </div>
-
-            <div class="card-footer-custom">
-                <button type="button" class="btn btn-outline-secondary me-2">Cancelar</button>
-                <button type="button" class="btn btn-danger fw-bold" id="btn-guardar-cambios">Guardar Cambios</button>
             </div>
 
         </div>
@@ -193,67 +125,60 @@
 
     <footer class="text-center py-3 border-top mt-4">
         <p class="mb-1 text-muted"><small>Recursos | Acerca de</small></p>
-        <p class="mb-0 text-muted"><small>Made with <i class="bi bi-heart-fill text-danger"></i> | <i class="bi bi-facebook"></i> <i class="bi bi-twitter"></i> <i class="bi bi-linkedin"></i></small></p>
+        <p class="mb-0 text-muted"><small>Made with <i class="bi bi-heart-fill text-danger"></i></small></p>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
-
     <script>
-        // Lógica para actualizar el valor del slider de prioridad en tiempo real
         const slider = document.getElementById('prioridad-slider');
         const sliderWrap = document.querySelector('.slider-wrap');
-        const btnGuardar = document.getElementById('btn-guardar-cambios');
-        
-        // Función para actualizar la visualización y el color del slider
-        function updateSliderDisplay(value) {
+        const toggles = document.querySelectorAll('.toggle-switch');
+        const canalMovil = document.getElementById('canal-movil');
+
+        function updateSliderDisplay(value){
             sliderWrap.setAttribute('data-nivel', value);
-            // Esto actualiza el color de progreso del slider (solución CSS personalizada)
             slider.style.background = `linear-gradient(to right, #CC0000 ${value}%, #ddd ${value}%)`;
         }
-        
-        // Inicializar con el valor predeterminado
+
         updateSliderDisplay(slider.value);
 
-        // Actualizar al mover el slider
-        slider.addEventListener('input', function() {
-            updateSliderDisplay(this.value);
+        slider.addEventListener('input', () => {
+            updateSliderDisplay(slider.value);
+            guardarPreferencias();
         });
 
-        // 💡 Función de ejemplo para recoger todos los datos para enviar al servidor (Django, etc.)
-        btnGuardar.addEventListener('click', () => {
-            const configuracion = {};
-            
-            // 1. Recoger Toggles (Preferencias y Agrupadas)
-            document.querySelectorAll('.toggle-switch').forEach(input => {
-                configuracion[input.name] = input.checked;
-            });
+        toggles.forEach(input => input.addEventListener('change', guardarPreferencias));
+        canalMovil.addEventListener('change', guardarPreferencias);
 
-            // 2. Recoger Canales
-            configuracion['canal_email'] = document.getElementById('canal-email').checked;
-            configuracion['canal_movil'] = document.getElementById('canal-movil').checked;
+        function guardarPreferencias(){
+            const configuracion = {
+                config_tareas: document.getElementById('tareas').checked,
+                config_calificaciones: document.getElementById('calificaciones').checked,
+                config_eventos: document.getElementById('eventos').checked,
+                config_anuncios: document.getElementById('anuncios').checked,
+                config_agrupadas: document.getElementById('agrupadas').checked,
+                canal_movil: canalMovil.checked,
+                prioridad: slider.value
+            };
 
-            // 3. Recoger Prioridad (Slider)
-            configuracion['prioridad'] = slider.value;
-
-            console.log("Configuración a enviar:", configuracion);
-            
-            // Aquí iría tu llamada fetch/AJAX al servidor
-            alert('¡Configuración guardada! (Simulado en consola)');
-            // Ejemplo de llamada (descomentar y completar URL)
-            /*
-            fetch('/api/guardar-configuracion/', {
-                method: 'POST',
+            fetch("{% url 'actualizar_preferencia' %}", {
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': 'TU_TOKEN_CSRF' // Si usas Django
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}"
                 },
                 body: JSON.stringify(configuracion)
             })
-            .then(response => response.json())
-            .then(data => console.log('Éxito:', data))
-            .catch(error => console.error('Error:', error));
-            */
-        });
+            .then(res => res.json())
+            .then(data => {
+                if(data.success){
+                    console.log(data.created ? "Preferencia creada" : "Preferencia actualizada");
+                } else {
+                    console.error("Error:", data.error);
+                }
+            })
+            .catch(err => console.error("Error fetch:", err));
+        }
     </script>
 </body>
 </html>
