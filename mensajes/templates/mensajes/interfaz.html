@@ -23,95 +23,101 @@
 
     <main class="d-flex justify-content-center align-items-start p-4">
         <div class="container text-center">
+
             {% if user.is_staff %}
                 <h2 class="fw-bold text-dark mb-4">Lista de alumnos</h2>
-            {% else %}
-                <h2 class="fw-bold text-dark mb-4">Mis Notificaciones</h2>
-            {% endif %}
 
-            <!-- 🔍 Barra de búsqueda -->
-            <div class="mb-4 d-flex justify-content-center gap-2">
-                <input type="text" id="search-input" class="form-control" placeholder="Buscar por nombre o DNI...">
-                <button id="btn-buscar" class="btn btn-primary">
-                    <i class="bi bi-search"></i> Buscar
-                </button>
-            </div>
-
-            <!-- 🏷️ Botones de filtro -->
-            <div class="btn-group mb-4" role="group">
-                <button type="button" class="btn btn-outline-secondary tag-btn" data-tag="Pago">Pago</button>
-                <button type="button" class="btn btn-outline-secondary tag-btn" data-tag="Falta de documentación">Falta de documentación</button>
-                <button type="button" class="btn btn-outline-secondary tag-btn" data-tag="Tarea">Tarea</button>
-                <button type="button" class="btn btn-outline-secondary tag-btn" data-tag="">Todos</button>
-            </div>
-
-            <!-- 📋 Contenedor de alumnos -->
-            <div id="alumnos-container" class="d-flex flex-column gap-3">
-                {% for alumno in alumnos %}
-                <div 
-                    class="alumno-card card border-start border-4 {% if not alumno.estado_pago %}border-warning{% elif not alumno.estado_documentacion %}border-danger{% else %}border-success{% endif %} shadow-sm"
-                    data-estado-pago="{{ alumno.estado_pago|yesno:'completo,pago_pendiente' }}"
-                    data-estado-doc="{{ alumno.estado_documentacion|yesno:'completo,falta_documentacion' }}"
-                    data-alumno-id="{{ alumno.id }}"
-                    data-user-id="{{ alumno.user.id }}"
-                >
-                    <div class="card-body text-start">
-                        <div class="d-flex justify-content-between mb-2">
-                            <div>
-                                {% if not alumno.estado_pago %}
-                                    <span class="badge bg-warning text-dark">Pago pendiente</span>
-                                {% elif not alumno.estado_documentacion %}
-                                    <span class="badge bg-danger">Falta documentación</span>
-                                {% else %}
-                                    <span class="badge bg-success">Completo</span>
-                                {% endif %}
-                            </div>
-                            <small class="text-muted">
-                                {% if alumno.carrera %}
-                                    {{ alumno.carrera.nombre }}
-                                {% else %}
-                                    Sin carrera
-                                {% endif %}
-                            </small>
-                        </div>
-
-                        <!-- 💬 Nombre + Iconos solo para staff -->
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="card-title mb-0">{{ alumno.user.first_name }} {{ alumno.user.last_name }}</h5>
-                            {% if user.is_staff %}
-                            <div class="contact-icons">
-                                {% if alumno.telefono %}
-                                <button class="btn btn-success btn-sm send-whatsapp" data-alumno-id="{{ alumno.id }}" data-nombre="{{ alumno.user.first_name }}" data-telefono="{{ alumno.telefono }}" title="Enviar WhatsApp">
-                                    <i class="bi bi-whatsapp"></i>
-                                </button>
-                                {% endif %}
-                                {% if alumno.user.email %}
-                                <button class="btn btn-primary btn-sm send-email" data-alumno-id="{{ alumno.id }}" data-nombre="{{ alumno.user.first_name }}" data-email="{{ alumno.user.email }}" title="Enviar correo">
-                                    <i class="bi bi-envelope-fill"></i>
-                                </button>
-                                {% endif %}
-                            </div>
-                            {% endif %}
-                        </div>
-
-                        <!-- 📄 Datos -->
-                        <p class="card-text mt-2">
-                            DNI: <span class="alumno-dni">{{ alumno.dni }}</span><br>
-                            Teléfono: {{ alumno.telefono }}<br>
-                            Dirección: {{ alumno.direccion }}
-                        </p>
-                    </div>
+                <!-- 🔍 Barra de búsqueda -->
+                <div class="mb-4 d-flex justify-content-center gap-2">
+                    <input type="text" id="search-input" class="form-control" placeholder="Buscar por nombre o DNI...">
+                    <button id="btn-buscar" class="btn btn-primary">
+                        <i class="bi bi-search"></i> Buscar
+                    </button>
                 </div>
-                {% endfor %}
-            </div>
 
-            <!-- 🧾 Mensaje cuando no hay notificaciones -->
-            <p id="no-notificaciones-msg" class="text-muted mt-4" style="display:none;">No tienes notificaciones disponibles.</p>
+                <!-- 🏷️ Botones de filtro -->
+                <div class="btn-group mb-4" role="group">
+                    <button type="button" class="btn btn-outline-secondary tag-btn" data-tag="Pago">Pago</button>
+                    <button type="button" class="btn btn-outline-secondary tag-btn" data-tag="Falta de documentación">Falta de documentación</button>
+                    <button type="button" class="btn btn-outline-secondary tag-btn" data-tag="Tarea">Tarea</button>
+                    <button type="button" class="btn btn-outline-secondary tag-btn" data-tag="">Todos</button>
+                </div>
+
+                <!-- 📋 Contenedor de alumnos -->
+                <div id="alumnos-container" class="d-flex flex-column gap-3">
+                    {% for alumno in alumnos %}
+                        <div 
+                            class="alumno-card card border-start border-4 {% if not alumno.estado_pago %}border-warning{% elif not alumno.estado_documentacion %}border-danger{% else %}border-success{% endif %} shadow-sm"
+                            data-estado-pago="{{ alumno.estado_pago|yesno:'completo,pago_pendiente' }}"
+                            data-estado-doc="{{ alumno.estado_documentacion|yesno:'completo,falta_documentacion' }}"
+                            data-alumno-id="{{ alumno.id }}"
+                            data-user-id="{{ alumno.user.id }}"
+                        >
+                            <div class="card-body text-start">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <div>
+                                        {% if not alumno.estado_pago %}
+                                            <span class="badge bg-warning text-dark">Pago pendiente</span>
+                                        {% elif not alumno.estado_documentacion %}
+                                            <span class="badge bg-danger">Falta documentación</span>
+                                        {% else %}
+                                            <span class="badge bg-success">Completo</span>
+                                        {% endif %}
+                                    </div>
+                                    <small class="text-muted">
+                                        {% if alumno.carrera %}{{ alumno.carrera.nombre }}{% else %}Sin carrera{% endif %}
+                                    </small>
+                                </div>
+
+                                <!-- 💬 Nombre + Iconos solo para staff -->
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="card-title mb-0">{{ alumno.user.first_name }} {{ alumno.user.last_name }}</h5>
+                                    <div class="contact-icons">
+                                        {% if alumno.telefono %}
+                                        <button class="btn btn-success btn-sm send-whatsapp" data-alumno-id="{{ alumno.id }}" data-nombre="{{ alumno.user.first_name }}" data-telefono="{{ alumno.telefono }}" title="Enviar WhatsApp">
+                                            <i class="bi bi-whatsapp"></i>
+                                        </button>
+                                        {% endif %}
+                                        {% if alumno.user.email %}
+                                        <button class="btn btn-primary btn-sm send-email" data-alumno-id="{{ alumno.id }}" data-nombre="{{ alumno.user.first_name }}" data-email="{{ alumno.user.email }}" title="Enviar correo">
+                                            <i class="bi bi-envelope-fill"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- 📄 Datos -->
+                                <p class="card-text mt-2">
+                                    DNI: <span class="alumno-dni">{{ alumno.dni }}</span><br>
+                                    Teléfono: {{ alumno.telefono }}<br>
+                                    Dirección: {{ alumno.direccion }}
+                                </p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+            {% else %}
+                <!-- Interfaz para usuario no staff -->
+                <h2 class="fw-bold text-dark mb-4">Panel de usuario</h2>
+                <p class="text-muted mb-4">
+                    Bienvenido a tu panel personal. En esta interfaz podrás:
+                </p>
+                <ul class="list-group list-group-flush mb-4">
+                    <li class="list-group-item">Acceder al sistema de mensajes internos.</li>
+                    <li class="list-group-item">Consultar tu panel de notificaciones.</li>
+                    <li class="list-group-item">Configurar tus preferencias y datos personales.</li>
+                    <li class="list-group-item">Otras funciones disponibles según tu perfil.</li>
+                </ul>
+
+                <!-- Mostrar notificaciones propias si existen -->
+                
+            {% endif %}
 
         </div>
     </main>
 
-    <!-- Modal para enviar mensaje -->
+    <!-- Modal para enviar mensaje (solo staff) -->
     <div class="modal fade" id="mensajeModal" tabindex="-1" aria-labelledby="mensajeModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -162,34 +168,14 @@ const enviarModalBtn = document.getElementById('enviarModalBtn');
 const userIdLogueado = parseInt("{{ user.id }}");
 const esStaff = "{{ user.is_staff|yesno:'true,false' }}" === "true";
 
-// Mostrar solo su tarjeta si no es staff
-if(!esStaff){
-    let visibles = 0;
-    alumnoCards.forEach(card => {
-        const alumnoId = parseInt(card.dataset.userId);
-        if(alumnoId !== userIdLogueado){
-            card.style.display = "none";
-        } else {
-            visibles++;
-        }
-    });
-    if(visibles === 0){
-        noNotificacionesMsg.style.display = "block";
-    }
-}
-
-// Función de filtrado
+// Función de filtrado (solo para staff)
 function filtrarAlumnos() {
+    if (!esStaff) return; // No hacer nada si no es staff
+
     const texto = searchInput.value.trim().toLowerCase();
     let encontrados = 0;
 
     alumnoCards.forEach(card => {
-        const alumnoId = parseInt(card.dataset.userId);
-        if(!esStaff && alumnoId !== userIdLogueado){
-            card.style.display = "none";
-            return;
-        }
-
         const nombre = card.querySelector(".card-title").textContent.toLowerCase();
         const dniElem = card.querySelector(".alumno-dni");
         const dni = dniElem ? dniElem.textContent.trim() : "";
@@ -213,9 +199,9 @@ function filtrarAlumnos() {
     const mensajeExistente = document.getElementById("mensaje-no-coincidencias");
     if (mensajeExistente) mensajeExistente.remove();
 
-    noNotificacionesMsg.style.display = encontrados === 0 && !esStaff ? "block" : "none";
+    noNotificacionesMsg.style.display = encontrados === 0 ? "block" : "none";
 
-    if(encontrados === 0 && esStaff){
+    if (encontrados === 0) {
         const msg = document.createElement("p");
         msg.id = "mensaje-no-coincidencias";
         msg.textContent = "No hay coincidencias por nombre o DNI.";
@@ -224,20 +210,22 @@ function filtrarAlumnos() {
     }
 }
 
-// Eventos
-searchBtn.addEventListener("click", filtrarAlumnos);
-searchInput.addEventListener("keydown", e => { if(e.key==="Enter") filtrarAlumnos(); });
-tagButtons.forEach(btn => {
-    btn.addEventListener("click", () => {
-        tagButtons.forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-        filtroTag = btn.dataset.tag;
-        filtrarAlumnos();
+// Eventos de búsqueda y filtrado
+if (esStaff) {
+    searchBtn.addEventListener("click", filtrarAlumnos);
+    searchInput.addEventListener("keydown", e => { if (e.key === "Enter") filtrarAlumnos(); });
+    tagButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            tagButtons.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            filtroTag = btn.dataset.tag;
+            filtrarAlumnos();
+        });
     });
-});
+}
 
 // Modal de contacto solo para staff
-if(esStaff){
+if (esStaff) {
     document.querySelectorAll(".send-whatsapp, .send-email").forEach(btn => {
         btn.addEventListener("click", () => {
             const card = btn.closest(".alumno-card");
@@ -252,10 +240,13 @@ if(esStaff){
     });
 
     enviarModalBtn.addEventListener("click", () => {
-        const mensaje = mensajeTextarea.value;
-        if(!alumnoSeleccionado) return;
-        const tipoSeleccionado = tipoSelect.value;
+        const mensaje = mensajeTextarea.value.trim();
+        if (!alumnoSeleccionado || !mensaje) return;
 
+        const tipoSeleccionado = tipoSelect.value;
+        const canal = tipoEnvio;  // WhatsApp o Email
+
+        // Enviar datos al backend
         fetch("{% url 'crear_notificacion' %}", {
             method: "POST",
             headers: {
@@ -263,17 +254,32 @@ if(esStaff){
                 "X-CSRFToken": "{{ csrf_token }}"
             },
             body: JSON.stringify({
-                alumno: alumnoSeleccionado,
-                tipo: tipoSeleccionado,
+                alumno_id: alumnoSeleccionado,
+                tipo_nombre: tipoSeleccionado,
+                canal: canal,
                 mensaje: mensaje,
-                estado_envio: "Pendiente"
+                estado_envio: "Pendiente",
+                carrera_id: "{{ user.perfilalumno.carrera.id|default:'' }}"
             })
-        }).then(res => res.json())
-          .then(data => { if(!data.success) console.error(data.error); })
-          .catch(err => console.error("Error al guardar notificación:", err));
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) {
+                console.error(data.error);
+                alert("❌ Error al guardar la notificación.");
+            } else {
+                console.log("✅ Notificación creada:", data);
+                alert("✅ Notificación enviada correctamente.");
+            }
+        })
+        .catch(err => {
+            console.error("Error al guardar notificación:", err);
+            alert("❌ Ocurrió un error al enviar la notificación.");
+        });
 
+        // Abrir el canal correspondiente
         const card = document.querySelector(`.alumno-card[data-alumno-id="${alumnoSeleccionado}"]`);
-        if(tipoEnvio==="WhatsApp"){
+        if (canal === "WhatsApp") {
             const telefono = card.querySelector(".send-whatsapp").dataset.telefono;
             window.open(`https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`, "_blank");
         } else {
@@ -288,6 +294,9 @@ if(esStaff){
     });
 }
 </script>
+
+
 </body>
 </html>
+
 

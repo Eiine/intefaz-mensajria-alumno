@@ -131,32 +131,57 @@ def listar_notificaciones(request):
 @login_required
 def crear_notificacion(request):
     if request.method == "POST":
-        data = json.loads(request.body)
-        alumno_id = data.get("alumno")
-        tipo_str = data.get("tipo")
-        mensaje = data.get("mensaje")
-        estado_envio = data.get("estado_envio", "Pendiente")
-
         try:
-            alumno = PerfilAlumno.objects.get(id=alumno_id)
-        except PerfilAlumno.DoesNotExist:
-            return JsonResponse({"error": "Alumno no encontrado"}, status=400)
+            data = json.loads(request.body)
 
-        tipo_notif, created = TipoNotificacion.objects.get_or_create(nombre_tipo=tipo_str)
+            alumno_id = data.get("alumno_id")
+            tipo_nombre = data.get("tipo_nombre")
+            canal = data.get("canal", "Email")
+            mensaje = data.get("mensaje")
+            estado_envio = data.get("estado_envio", "Pendiente")
+            carrera_id = data.get("carrera_id")
 
-        notificacion = Notificacion.objects.create(
-            alumno=alumno,
-            tipo=tipo_notif,
-            mensaje=mensaje,
-            estado_envio=estado_envio
-        )
+            if not alumno_id or not tipo_nombre:
+                return JsonResponse({"success": False, "error": "Datos incompletos."}, status=400)
 
-        return JsonResponse({
-            "success": True,
-            "alumno": str(alumno),
-            "tipo": tipo_notif.nombre_tipo,
-            "mensaje": mensaje
-        })
+            # ✅ Buscar el alumno
+            try:
+                alumno = PerfilAlumno.objects.get(id=alumno_id)
+            except PerfilAlumno.DoesNotExist:
+                return JsonResponse({"success": False, "error": "Alumno no encontrado."}, status=404)
+
+            # ✅ Crear o recuperar el tipo de notificación
+            tipo_notif, created = TipoNotificacion.objects.get_or_create(
+                nombre_tipo=tipo_nombre,
+                defaults={
+                    "canal": canal,
+                    "carrera_id": carrera_id
+                }
+            )
+
+            # ✅ Crear la notificación
+            notificacion = Notificacion.objects.create(
+                tipo=tipo_notif,
+                mensaje=mensaje,
+                estado_envio=estado_envio
+            )
+
+            # ✅ Asociar el alumno a la notificación (ManyToMany)
+            notificacion.alumnos.add(alumno)
+
+            return JsonResponse({
+                "success": True,
+                "tipo": tipo_notif.nombre_tipo,
+                "canal": tipo_notif.canal,
+                "mensaje": mensaje,
+                "alumno": str(alumno),
+                "tipo_creado": created
+            })
+
+        except Exception as e:
+            return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+    return JsonResponse({"success": False, "error": "Método no permitido"}, status=405)
 
 def panel_admin(request):
     # Traer todos los alumnos que no son staff
@@ -185,12 +210,14 @@ def get_notificaciones(request, alumno_id):
     except PerfilAlumno.DoesNotExist:
         return JsonResponse({'error': 'Alumno no encontrado'}, status=404)
 
-    notificaciones = Notificacion.objects.filter(alumno=alumno).order_by('-fecha_envio')
+    notificaciones = Notificacion.objects.filter(alumnos=alumno).order_by('-fecha_envio')
     data = [
         {
-            'tipo': n.tipo.nombre_tipo,
+            'tipo': n.tipo.nombre_tipo if n.tipo else 'Sin tipo',
+            'canal': n.tipo.canal if n.tipo else 'N/A',
             'mensaje': n.mensaje,
-            'fecha_envio': n.fecha_envio.strftime('%d/%m/%Y %H:%M')
+            'fecha_envio': n.fecha_envio.strftime('%d/%m/%Y %H:%M'),
+            'estado_envio': n.estado_envio
         } for n in notificaciones
     ]
     return JsonResponse({'notificaciones': data, 'alumno': f'{alumno.user.first_name} {alumno.user.last_name}'})
@@ -201,12 +228,14 @@ def ajax_notificaciones(request, alumno_id):
     except PerfilAlumno.DoesNotExist:
         return JsonResponse({'error': 'Alumno no encontrado.'})
 
-    notificaciones = Notificacion.objects.filter(alumno=alumno).order_by('-fecha_envio')
+    notificaciones = Notificacion.objects.filter(alumnos=alumno).order_by('-fecha_envio')
     data = {
         'alumno': f"{alumno.user.first_name} {alumno.user.last_name}",
         'notificaciones': [
             {
-                'tipo': n.tipo.nombre_tipo,
+                'tipo': n.tipo.nombre_tipo if n.tipo else 'Sin tipo',
+                'canal': n.tipo.canal if n.tipo else 'N/A',
+                'estado_envio': n.estado_envio,
                 'fecha_envio': n.fecha_envio.strftime("%d/%m/%Y %H:%M"),
                 'mensaje': n.mensaje
             } for n in notificaciones
