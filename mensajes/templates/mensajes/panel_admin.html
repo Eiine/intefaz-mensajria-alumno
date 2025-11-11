@@ -15,7 +15,7 @@
         .filtro-btn { margin-right: 5px; margin-bottom: 5px; }
     </style>
 </head>
-<body>
+<body style="padding-top: 70px;">
     {% include "mensajes/navbar.html" %}
 <div class="d-flex vh-100">
 
@@ -75,6 +75,7 @@ document.addEventListener("DOMContentLoaded", function() {
             fetch(`/ajax/notificaciones/${alumnoId}/`)
                 .then(res => res.json())
                 .then(data => {
+                    
                     if(data.error){
                         messagesDiv.innerHTML = `<p class="text-danger">${data.error}</p>`;
                         return;

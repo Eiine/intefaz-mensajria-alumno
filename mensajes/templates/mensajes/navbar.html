@@ -1,5 +1,5 @@
 {% load static %}
-<nav class="navbar navbar-expand-lg" style="background-color: #8B0000;">
+<nav class="navbar navbar-expand-lg fixed-top" style="background-color: #8B0000;">
     <div class="container-fluid">
         
         <a class="navbar-brand d-flex align-items-center" href="#">
@@ -12,12 +12,12 @@
         <div class="flex-grow-1"></div>
 
         <!-- Icono de notificaciones -->
-        <a href="{% url 'mensajes' %}" class="nav-link position-relative me-3">
-            <i class="bi bi-envelope-fill fs-5" style="color: white;"></i>
-            <!-- Badge (opcional, solo si querés mostrar cantidad de mensajes nuevos) -->
-            
-            </span>
-        </a>
+       <!-- Icono de notificaciones -->
+<a href="{% url 'mensajes' %}" class="nav-link position-relative me-3">
+    <i class="bi bi-envelope-fill fs-5" style="color: white;"></i>
+    <span id="mensajes-punto" class="position-absolute top-0 start-100 translate-middle p-1 bg-danger rounded-circle" style="display:none;"></span>
+</a>
+
 
         <!-- Menú de perfil -->
         <div class="dropdown">
@@ -27,12 +27,10 @@
 
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="perfilDropdown">
                 <li><a class="dropdown-item" href="{% url 'alumnos_lista' %}">Inicio</a></li>
-                <li><a class="dropdown-item active" href="{% url 'notificaciones' %}">Notificaciones</a></li>
                    {% if user.is_staff %}
                      <li><a class="dropdown-item active" href="{% url 'panel_admin' %}">Panel admin</a></li>
-                   {% else %}
-                    <li><a class="dropdown-item active" href="{% url 'panel_admin' %}">Panel usuario</a></li>
-                   {% endif %}
+                     <li><a class="dropdown-item active" href="{% url 'notificaciones' %}">Notificaciones</a></li>
+                     {% endif %}
                 
 
                    {% if not user.is_staff %}
@@ -64,4 +62,29 @@
         }
     </style>
 </nav>
+<script>
+ (function() {
+    const usuarioActualId = parseInt("{{ request.user.id }}");
+    
+    function checkMensajesNuevos() {
+        fetch('/api/mensajes/nuevos/')  // Endpoint que devuelve {nuevos: X}
+            .then(resp => resp.json())
+            .then(data => {
+                console.log(data.nuevos);
+                
+                const punto = document.getElementById('mensajes-punto');
+                if (!punto) return;
 
+                if (data.nuevos && data.nuevos > 0) {
+                    punto.style.display = 'inline-block';
+                } else {
+                    punto.style.display = 'none';
+                }
+            })
+            .catch(err => console.error('Error al consultar mensajes nuevos:', err));
+    }
+
+    checkMensajesNuevos();
+})();
+
+</script>

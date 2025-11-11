@@ -17,7 +17,7 @@
         .contact-icons a:hover { opacity: 0.8; }
     </style>
 </head>
-<body>
+<body style="padding-top: 70px;">
     {% include "mensajes/navbar.html" %}
     {% include "mensajes/sidebar.html" %}
 
@@ -98,20 +98,12 @@
                 </div>
 
             {% else %}
-                <!-- Interfaz para usuario no staff -->
-                <h2 class="fw-bold text-dark mb-4">Panel de usuario</h2>
-                <p class="text-muted mb-4">
-                    Bienvenido a tu panel personal. En esta interfaz podrás:
+                <!-- 🔔 Panel de notificaciones -->
+                <h2 class="fw-bold text-dark mb-4">Mis notificaciones</h2>
+                <div id="notificaciones-container" class="d-flex flex-column gap-3"></div>
+                <p id="no-notificaciones-msg" class="text-muted mt-3" style="display: none;">
+                    No tienes notificaciones por el momento.
                 </p>
-                <ul class="list-group list-group-flush mb-4">
-                    <li class="list-group-item">Acceder al sistema de mensajes internos.</li>
-                    <li class="list-group-item">Consultar tu panel de notificaciones.</li>
-                    <li class="list-group-item">Configurar tus preferencias y datos personales.</li>
-                    <li class="list-group-item">Otras funciones disponibles según tu perfil.</li>
-                </ul>
-
-                <!-- Mostrar notificaciones propias si existen -->
-                
             {% endif %}
 
         </div>
@@ -170,8 +162,7 @@ const esStaff = "{{ user.is_staff|yesno:'true,false' }}" === "true";
 
 // Función de filtrado (solo para staff)
 function filtrarAlumnos() {
-    if (!esStaff) return; // No hacer nada si no es staff
-
+    if (!esStaff) return;
     const texto = searchInput.value.trim().toLowerCase();
     let encontrados = 0;
 
@@ -244,9 +235,8 @@ if (esStaff) {
         if (!alumnoSeleccionado || !mensaje) return;
 
         const tipoSeleccionado = tipoSelect.value;
-        const canal = tipoEnvio;  // WhatsApp o Email
+        const canal = tipoEnvio;
 
-        // Enviar datos al backend
         fetch("{% url 'crear_notificacion' %}", {
             method: "POST",
             headers: {
@@ -268,7 +258,6 @@ if (esStaff) {
                 console.error(data.error);
                 alert("❌ Error al guardar la notificación.");
             } else {
-                console.log("✅ Notificación creada:", data);
                 alert("✅ Notificación enviada correctamente.");
             }
         })
@@ -277,7 +266,6 @@ if (esStaff) {
             alert("❌ Ocurrió un error al enviar la notificación.");
         });
 
-        // Abrir el canal correspondiente
         const card = document.querySelector(`.alumno-card[data-alumno-id="${alumnoSeleccionado}"]`);
         if (canal === "WhatsApp") {
             const telefono = card.querySelector(".send-whatsapp").dataset.telefono;
@@ -293,10 +281,48 @@ if (esStaff) {
         mensajeModal.hide();
     });
 }
+
+// =========================
+// 🔔 Cargar notificaciones (solo para usuario no staff)
+// =========================
+if (!esStaff) {
+    const contenedor = document.getElementById("notificaciones-container");
+    const sinMsg = document.getElementById("no-notificaciones-msg");
+    const alumnoId = parseInt("{{ user.perfilalumno.id }}");
+    fetch(`/ajax/notificaciones/${alumnoId}/`)
+        .then(res => res.json())
+        .then(data => {
+            console.log(data.notificaciones);
+            if (!data || data.length === 0) {
+                sinMsg.style.display = "block";
+                return;
+            }
+
+            data.notificaciones.forEach(n => {
+                const card = document.createElement("div");
+                card.className = "card shadow-sm text-start";
+
+                let color = "border-primary";
+                if (n.tipo_nombre && n.tipo_nombre.toLowerCase().includes("pago")) color = "border-warning";
+                else if (n.tipo_nombre && n.tipo_nombre.toLowerCase().includes("document")) color = "border-danger";
+                else if (n.tipo_nombre && n.tipo_nombre.toLowerCase().includes("recordatorio")) color = "border-info";
+
+                card.classList.add("border-start", "border-4", color);
+                card.innerHTML = `
+                    <div class="card-body">
+                        <h6 class="fw-bold mb-1">${n.tipo_nombre || n.tipo}</h6>
+                        <p class="mb-1">${n.mensaje || ""}</p>
+                        <small class="text-muted">Estado: ${n.estado_envio || "Pendiente"} | Canal: ${n.canal || "N/A"}</small>
+                    </div>
+                `;
+                contenedor.appendChild(card);
+            });
+        })
+        .catch(err => {
+            console.error("Error cargando notificaciones:", err);
+            sinMsg.style.display = "block";
+        });
+}
 </script>
-
-
 </body>
 </html>
-
-

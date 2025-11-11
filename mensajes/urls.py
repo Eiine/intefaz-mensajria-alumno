@@ -13,15 +13,18 @@ urlpatterns = [
     path('notificaciones/', views.notificaciones, name='notificaciones'),
     path('notificaciones/crear/', views.crear_notificacion, name='notificaciones_crear'),
      # CRUD PerfilAlumno
+    path('alumnos/', views.alumnos_lista, name='listar_alumnos'),
     path('filtrar_alumnos/', views.filtrar_alumnos, name='filtrar_alumnos'),
     path('alumnos/crear/', views.interfaz, name='perfil_alumno_crear'),
     path('alumnos/<int:pk>/editar/', views.interfaz, name='perfil_alumno_editar'),
     path('alumnos/<int:pk>/eliminar/', views.interfaz, name='perfil_alumno_eliminar'),
     path('alumnos/<int:pk>/', views.interfaz, name='perfil_alumno_detalle'),
-     path("mensajes/", views.mensajes_view, name="mensajes"),
-     path('api/mensajes/enviar/', views.enviar_mensaje, name='enviar_mensaje'),
-     path("api/mensajes/", views.obtener_mensajes, name="obtener_mensajes_usuario"),
-     path('api/actualizar-preferencia/', views.actualizar_preferencia, name='actualizar_preferencia'),
+    path("mensajes/", views.mensajes_view, name="mensajes"),
+    path('api/mensajes/nuevos/', views.mensajes_nuevos, name='mensajes_nuevos'),
+    path('api/mensajes/enviar/', views.enviar_mensaje, name='enviar_mensaje'),
+    path("api/mensajes/", views.obtener_mensajes, name="obtener_mensajes_usuario"),
+    path('api/actualizar-preferencia/', views.actualizar_preferencia, name='actualizar_preferencia'),
+    path('api/mensajes/marcar_leidos/', views.marcar_leidos, name='marcar_leidos'),
     # CRUD Notificacion
 
     path('notificaciones/crear/', views.crear_notificacion, name='crear_notificacion'),

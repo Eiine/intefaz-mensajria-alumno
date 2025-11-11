@@ -1,7 +1,7 @@
 from django.http import JsonResponse
-from .models import PerfilAlumno, TipoNotificacion, Notificacion, Pago, MensajeInterno
+from .models import PerfilAlumno, TipoNotificacion,MensajeInterno ,Notificacion, Pago
 from django.shortcuts import render, get_object_or_404, redirect
-from .forms import PerfilAlumnoForm, NotificacionForm, CarreraForm, PagoForm, MensajeInternoForm,PerfilAlumno
+from .forms import PerfilAlumnoForm ,NotificacionForm, CarreraForm, PagoForm, MensajeInternoForm,PerfilAlumno
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login
 from django.contrib import messages
@@ -60,6 +60,10 @@ def notificaciones(request):
 # ----------------------------------------
 # PerfilAlumno CRUD
 # ----------------------------------------
+def alumnos_lista(request):
+    alumnos = User.objects.select_related("perfilalumno").all()
+    data = alumnos.values("id", "first_name", "last_name", "perfilalumno__dni")
+    return JsonResponse({"alumnos": list(data)})
 @login_required
 def listar_alumnos(request):
     alumnos = PerfilAlumno.objects.select_related('user', 'carrera').all()
@@ -317,6 +321,7 @@ def obtener_mensajes(request):
         return JsonResponse({"error": str(e)}, status=500)
     
 @login_required
+
 def enviar_mensaje(request):
     if request.method != "POST":
         return JsonResponse({"error": "Método no permitido."}, status=405)
@@ -329,26 +334,32 @@ def enviar_mensaje(request):
         if not destinatario_id or not mensaje_texto:
             return JsonResponse({"error": "Datos incompletos."}, status=400)
 
-        destinatario = User.objects.get(id=destinatario_id)
+        # Obtenemos o creamos el perfil del remitente
+        remitente_perfil, _ = PerfilAlumno.objects.get_or_create(user=request.user)
 
+        # Obtenemos o creamos el perfil del destinatario
+        destinatario_usuario = User.objects.get(id=destinatario_id)
+        destinatario_perfil, _ = PerfilAlumno.objects.get_or_create(user=destinatario_usuario)
+
+        # Creamos el mensaje
         nuevo_mensaje = MensajeInterno.objects.create(
-            remitente=request.user,
-            destinatario=destinatario,
+            remitente=remitente_perfil,
+            destinatario=destinatario_perfil,
             mensaje=mensaje_texto
         )
 
         return JsonResponse({
-            "success": True,
-            "mensaje": "Mensaje enviado correctamente.",
-            "id": nuevo_mensaje.id
-        })
+    "success": True,
+    "mensaje": "Mensaje enviado correctamente.",
+    "id": nuevo_mensaje.id,
+    "mensaje_texto": nuevo_mensaje.mensaje,
+    "remitente": request.user.get_full_name()  # o request.user.username
+})
 
     except User.DoesNotExist:
         return JsonResponse({"error": "El destinatario no existe."}, status=404)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
-
-
 
 def actualizar_preferencia(request):
     if request.method == "POST":
@@ -376,5 +387,49 @@ def actualizar_preferencia(request):
 
         except Exception as e:
             return JsonResponse({"success": False, "error": str(e)})
+
+    return JsonResponse({"success": False, "error": "Método no permitido"})
+    
+def mensajes_nuevos(request):
+    try:
+        usuario_actual = request.user
+
+        # Contar mensajes no leídos donde el usuario actual es destinatario,
+        # pero ignorar los mensajes que él mismo haya enviado.
+        cantidad_nuevos = MensajeInterno.objects.filter(
+            destinatario__user=usuario_actual,
+            leido= False
+        ).exclude(remitente__user=usuario_actual).count()
+        print(cantidad_nuevos)
+        return JsonResponse({"nuevos": cantidad_nuevos})
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+def marcar_leidos(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        remitente_user_id = data.get("remitente_id")
+        usuario_actual = request.user.perfilalumno
+
+        try:
+            remitente_perfil = PerfilAlumno.objects.get(user__id=remitente_user_id)
+        except PerfilAlumno.DoesNotExist:
+            return JsonResponse({"error": "Remitente no encontrado."}, status=404)
+
+        # ✅ Marcar como leídos los mensajes recibidos desde ese remitente
+        MensajeInterno.objects.filter(
+            remitente=remitente_perfil,
+            destinatario=usuario_actual,
+            leido=False
+        ).update(leido=True)
+
+        # Contar los no leídos restantes
+        total_no_leidos = MensajeInterno.objects.filter(
+            destinatario=usuario_actual,
+            leido=False
+        ).count()
+
+        return JsonResponse({"success": True, "total_no_leidos": total_no_leidos})
 
     return JsonResponse({"success": False, "error": "Método no permitido"})
