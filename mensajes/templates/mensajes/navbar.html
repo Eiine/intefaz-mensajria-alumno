@@ -34,7 +34,11 @@
                     <li><a class="dropdown-item active" href="{% url 'panel_admin' %}">Panel usuario</a></li>
                    {% endif %}
                 
-                <li><a class="dropdown-item" href="{% url 'configuraciones' %}">Configuraciones</a></li>
+
+                   {% if not user.is_staff %}
+                    <li><a class="dropdown-item" href="{% url 'configuraciones' %}">Configuraciones</a></li>
+                    {% endif %}
+                
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item" href="{% url 'logout' %}">Cerrar sesión</a></li>
             </ul>

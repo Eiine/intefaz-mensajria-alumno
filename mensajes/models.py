@@ -68,7 +68,7 @@ class Notificacion(models.Model):
     mensaje = models.TextField(default="mensaje por defecto")
 
     def __str__(self):
-        return f"Notificación {self.tipo} para {self.alumno}"
+        return f"Notificación {self.tipo} para {', '.join([str(a) for a in self.alumnos.all()])}"
 
 
 # ----------------------------------------
