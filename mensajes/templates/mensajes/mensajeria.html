@@ -10,18 +10,14 @@
             background-color: #f0f0f0;
             cursor: pointer;
         }
-
-        /* 🔹 Estilo de resaltado para usuarios con mensajes no leídos */
-        .usuario-item.no-leido {
-            background-color: #cce5ff !important; /* celeste claro */
-            font-weight: bold;
+        .usuario-item.seleccionado {
+            background-color: #007bff !important;
+            color: white;
         }
-
         #mensajes-container {
             max-height: 500px;
             overflow-y: auto;
         }
-
         #buscador-usuarios {
             margin-bottom: 10px;
         }
@@ -32,133 +28,97 @@
 
 <div class="container-fluid mt-4">
     <div class="row">
-        <!-- 📋 Lista de usuarios -->
+        <!-- Lista de usuarios -->
         <div class="col-md-3 border-end">
             <h5>Alumnos</h5>
-
-            <!-- 🔍 Buscador -->
             <input type="text" id="buscador-usuarios" class="form-control mb-2" placeholder="Buscar por nombre o DNI...">
-
             <ul class="list-group" id="usuarios-conversacion">
-                <!-- Se cargarán los usuarios con conversaciones -->
+                <!-- Se llenará con usuarios con conversación -->
             </ul>
         </div>
 
-        <!-- 💬 Mensajes -->
+        <!-- Mensajes -->
         <div class="col-md-9">
             <h5 id="titulo-chat">Selecciona un alumno para ver los mensajes</h5>
-            <div id="mensajes-container" class="p-2" style="max-height:500px; overflow-y:auto;">
+            <div id="mensajes-container" class="p-2">
                 <p>Selecciona un alumno para ver la conversación y enviar un mensaje.</p>
             </div>
         </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+let usuarios = JSON.parse('{{ usuarios|escapejs }}'); // Todos los usuarios
+let usuarioActualId = parseInt("{{ request.user.id }}");
+let mensajesData = []; // Todos los mensajes del usuario
+let usuariosConversacion = {}; // Diccionario {id_usuario: nombre_completo}
 let alumnoSeleccionado = null;
-let mensajesData = [];  // Todos los mensajes del usuario actual
-let usuariosConversacion = {}; // Usuarios con los que ya hay conversación
-let usuariosNoLeidos = new Set(); // IDs de usuarios con mensajes no leídos
 
-const usuarioActualId = parseInt("{{ request.user.id }}");
-
-// 🔹 Traer todos los mensajes al cargar la página
-function cargarMensajes() {
-    fetch(`/api/mensajes/`)
-    .then(resp => resp.json())
-    .then(data => {
-        mensajesData = data;
-
-        // Construir lista de usuarios con los que se tiene conversación
-        usuariosConversacion = {};
-        data.forEach(msg => {
-            if (msg.remitente_id === usuarioActualId) {
-                usuariosConversacion[msg.destinatario_id] = msg.destinatario;
-            } else if (msg.destinatario_id === usuarioActualId) {
-                usuariosConversacion[msg.remitente_id] = msg.remitente;
-            }
-        });
-
-        // Identificar usuarios con mensajes no leídos (último mensaje fue del otro)
-        detectarUsuariosNoLeidos();
-
-        renderizarUsuarios(Object.keys(usuariosConversacion));
-    });
-}
-
-// 🔹 Detectar usuarios que tienen mensajes sin leer
-function detectarUsuariosNoLeidos() {
-    usuariosNoLeidos.clear();
-
-    // Agrupamos por usuario
-    const ultimosMensajes = {};
-
-    mensajesData.forEach(msg => {
-        let otroId = msg.remitente_id === usuarioActualId ? msg.destinatario_id : msg.remitente_id;
-
-        // Guardar el último mensaje por usuario (según fecha)
-        if (!ultimosMensajes[otroId] || new Date(msg.fecha_envio) > new Date(ultimosMensajes[otroId].fecha_envio)) {
-            ultimosMensajes[otroId] = msg;
-        }
-    });
-
-    // Si el último mensaje fue enviado POR EL OTRO, lo marcamos como no leído
-    Object.keys(ultimosMensajes).forEach(uid => {
-        const msg = ultimosMensajes[uid];
-        if (msg.remitente_id !== usuarioActualId) {
-            usuariosNoLeidos.add(parseInt(uid));
-        }
-    });
-}
-
-// 🔹 Renderizar usuarios en la lista lateral
-function renderizarUsuarios(idsUsuarios) {
+// 🔹 Función para renderizar la barra lateral solo con usuarios con conversación
+function renderizarUsuarios(ids = null) {
     const container = document.getElementById('usuarios-conversacion');
     container.innerHTML = '';
 
-    if (idsUsuarios.length === 0) {
-        container.innerHTML = `<li class="list-group-item text-muted">No hay conversaciones</li>`;
-        return;
-    }
+  let lista = ids 
+    ? usuarios.filter(u => ids.includes(u.user__id)) // filtrado por búsqueda
+    : usuarios.filter(u => 
+    mensajesData.some(msg => 
+        (msg.remitente_id === usuarioActualId && msg.destinatario_id === u.user__id) ||
+        (msg.destinatario_id === usuarioActualId && msg.remitente_id === u.user__id)
+    )
+)
+ // todos con conversación
 
-    idsUsuarios.forEach(id => {
-        const li = document.createElement('li');
+    lista.forEach(u => {
+        let li = document.createElement('li');
         li.className = 'list-group-item usuario-item';
-        li.textContent = usuariosConversacion[id];
-        li.dataset.userId = id;
+        li.textContent = u.user__first_name + ' ' + u.user__last_name + ' - ' + u.dni;
+        li.dataset.userId = u.id;
 
-        // Si el usuario tiene mensajes no leídos, aplicar clase
-        if (usuariosNoLeidos.has(parseInt(id))) {
-            li.classList.add('no-leido');
-        }
+        if (alumnoSeleccionado === u.id) li.classList.add('seleccionado');
+       
+        
+        
+        // Al hacer click, selecciona usuario y muestra conversación
+        li.onclick = () => seleccionarUsuario(u.user__id, li);
 
-        li.onclick = () => mostrarConversacion(id);
         container.appendChild(li);
     });
+
+    if (!lista.length) {
+        container.innerHTML = `<li class="list-group-item text-muted">No hay usuarios</li>`;
+    }
 }
 
-// 🔹 Mostrar conversación de un usuario seleccionado
-function mostrarConversacion(alumnoId) {
-    alumnoSeleccionado = parseInt(alumnoId);
+// 🔹 Seleccionar usuario
+function seleccionarUsuario(id, elemento) {
+    alumnoSeleccionado = id;
+
+    document.querySelectorAll('.usuario-item').forEach(li => li.classList.remove('seleccionado'));
+    if (elemento) elemento.classList.add('seleccionado');
+    
+    mostrarConversacion();
+}
+
+// 🔹 Mostrar conversación y permitir enviar mensajes
+function mostrarConversacion() {
     const container = document.getElementById('mensajes-container');
     container.innerHTML = '';
-
-    // Filtrar mensajes entre usuario actual y seleccionado
+      
     const conversacion = mensajesData.filter(msg =>
-        (msg.remitente_id === usuarioActualId && msg.destinatario_id === alumnoSeleccionado) ||
-        (msg.remitente_id === alumnoSeleccionado && msg.destinatario_id === usuarioActualId)
-    );
+    (Number(msg.remitente_id) === usuarioActualId && Number(msg.destinatario_id) === alumnoSeleccionado) ||
+    (Number(msg.remitente_id) === alumnoSeleccionado && Number(msg.destinatario_id) === usuarioActualId)
+);
 
-    // Mostrar mensajes
+   
+    
     conversacion.forEach(msg => {
         const div = document.createElement('div');
         div.className = 'mensaje p-2 my-1';
-
         if (msg.remitente_id === usuarioActualId) {
             div.style.textAlign = 'right';
-            div.innerHTML = `<span class="badge bg-primary">${msg.mensaje}</span><br><small>${msg.remitente}</small>`;
+            div.innerHTML = `<span class="badge bg-primary">${msg.mensaje}</span><br><small>Yo</small>`;
         } else {
             div.style.textAlign = 'left';
             div.innerHTML = `<small>${msg.remitente}</small><br><span class="badge bg-secondary">${msg.mensaje}</span>`;
@@ -166,110 +126,105 @@ function mostrarConversacion(alumnoId) {
         container.appendChild(div);
     });
 
-    // Input + botón para enviar mensaje
     const inputDiv = document.createElement('div');
     inputDiv.className = 'input-group mt-2';
     inputDiv.innerHTML = `
         <input type="text" id="mensaje-texto" class="form-control" placeholder="Escribí un mensaje...">
         <button class="btn btn-primary" type="button" onclick="enviarMensaje()">Enviar</button>
     `;
+    
     container.appendChild(inputDiv);
-
     container.scrollTop = container.scrollHeight;
-
-    // ✅ Marcar mensajes como leídos visualmente
-    const li = document.querySelector(`.usuario-item[data-user-id='${alumnoId}']`);
-    if (li) li.classList.remove('no-leido');
-
-    // ✅ Quitar de la lista de no leídos
-    usuariosNoLeidos.delete(parseInt(alumnoId));
-
-    // ✅ Informar al backend que los marcamos como leídos
-    fetch(`/api/mensajes/marcar_leidos/`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCookie("csrftoken"),
-        },
-        body: JSON.stringify({ remitente_id: alumnoSeleccionado })
-    })
-    .then(resp => resp.json())
-    .then(data => {
-        if (data.success) {
-            const punto = document.getElementById('mensajes-punto');
-            if (punto) punto.style.display = 'none';
-        }
-    });
 }
 
-// 💬 Enviar mensaje
+// 🔹 Enviar mensaje
 function enviarMensaje() {
     const texto = document.getElementById('mensaje-texto').value.trim();
     if (!texto || !alumnoSeleccionado) return;
-
+   console.log(alumnoSeleccionado);
+   
     fetch(`/api/mensajes/enviar/`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            "X-CSRFToken": getCookie("csrftoken"),
+            "X-CSRFToken": getCookie("csrftoken")
         },
-        body: JSON.stringify({
-            destinatario_id: alumnoSeleccionado,
-            mensaje: texto
-        })
+        body: JSON.stringify({ destinatario_id: alumnoSeleccionado, mensaje: texto })
     })
     .then(resp => resp.json())
     .then(data => {
         if (data.success) {
-            const container = document.getElementById('mensajes-container');
-            const div = document.createElement('div');
-            div.className = 'mensaje p-2 my-1';
-            div.style.textAlign = 'right';
-            div.innerHTML = `<span class="badge bg-primary">${texto}</span><br><small>Yo</small>`;
-            container.insertBefore(div, container.lastChild);
-            container.scrollTop = container.scrollHeight;
-
-            document.getElementById('mensaje-texto').value = '';
-
-            // Actualizar datos locales
             mensajesData.push({
                 id: data.id,
                 remitente_id: usuarioActualId,
                 destinatario_id: alumnoSeleccionado,
                 remitente: "Yo",
-                destinatario: usuariosConversacion[alumnoSeleccionado],
+                destinatario: usuarios.find(u => u.user__id === alumnoSeleccionado).user__first_name,
                 mensaje: texto,
                 fecha_envio: new Date().toISOString()
             });
+            console.log("el que da"+usuarioActualId,"recive"+alumnoSeleccionado);
+            
+            mostrarConversacion();
+            document.getElementById('mensaje-texto').value = '';
         } else {
             alert("Error: " + data.error);
         }
     });
 }
 
-// CSRF helper
+// 🔹 CSRF
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let cookie of cookies) {
+        document.cookie.split(';').forEach(cookie => {
             cookie = cookie.trim();
-            if (cookie.startsWith(name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
+            if (cookie.startsWith(name + '=')) cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        });
     }
     return cookieValue;
 }
 
-// 🚀 Inicialización
+
+// 🔹 Inicialización al cargar la página
 document.addEventListener('DOMContentLoaded', () => {
-    const punto = document.getElementById('mensajes-punto');
-    if (punto) punto.style.display = 'none';
-    cargarMensajes();
+    fetch(`/api/mensajes/`) // traer todos los mensajes
+        .then(resp => resp.json())
+        .then(data => {
+            mensajesData = data;
+            // Construir lista de usuarios con conversación
+            data.forEach(msg => {
+                const otroId = msg.remitente_id === usuarioActualId ? msg.destinatario_id : msg.remitente_id;
+                const otroNombre = msg.remitente_id === usuarioActualId ? msg.destinatario : msg.remitente;
+                usuariosConversacion[otroId] = otroNombre;
+            });
+
+            renderizarUsuarios(); // Renderizar solo usuarios con conversación
+        });
+});
+
+
+// 🔹 Buscar usuarios
+document.getElementById('buscador-usuarios').addEventListener('keyup', () => {
+    const texto = document.getElementById('buscador-usuarios').value.trim().toLowerCase();
+    if (!texto) {
+        renderizarUsuarios(); // volver a mostrar solo usuarios con conversación
+        return;
+    }
+    
+
+    const filtrados = usuarios.filter(u => {
+     
+        
+        const nombreCompleto = (u.user__first_name + ' ' + u.user__last_name).toLowerCase();
+        const dni = (u.dni || '').toLowerCase();
+        return nombreCompleto.includes(texto) || dni.includes(texto);
+    });
+    
+    
+    
+    renderizarUsuarios(filtrados.map(f => f.user__id));
 });
 </script>
-
 </body>
 </html>

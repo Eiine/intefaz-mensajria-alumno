@@ -1,117 +1,46 @@
-# seed.py
 import os
 import django
-import random
-from faker import Faker
-from datetime import datetime, timedelta
-from decimal import Decimal
 
-# ----------------------------------------
-# Configuración de Django
-# ----------------------------------------
+# Configura el entorno de Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'interfas_mensajria.settings')
 django.setup()
 
-from django.contrib.auth.models import User
-from mensajes.models import Carrera, PerfilAlumno, TipoNotificacion, Notificacion, Pago, MensajeInterno
+from mensajes.models import Carrera
 
-# ----------------------------------------
-# Inicializar Faker en español
-# ----------------------------------------
-fake = Faker('es_ES')
+# 🔽 Tu código de seed normal a continuación 🔽
 
-# ----------------------------------------
-# Limpiar datos anteriores (opcional)
-# ----------------------------------------
-MensajeInterno.objects.all().delete()
-Pago.objects.all().delete()
-Notificacion.objects.all().delete()
-TipoNotificacion.objects.all().delete()
-PerfilAlumno.objects.all().delete()
-Carrera.objects.all().delete()
-User.objects.filter(is_superuser=False).delete()
+carreras = [
+    {
+        'nombre': 'Historia',
+        'modalidad': 'Presencial',
+        'descripcion': 'Estudio y análisis de los procesos históricos y sus implicancias sociales.',
+    },
+    {
+        'nombre': 'Matematicas',
+        'modalidad': 'A distancia',
+        'descripcion': 'Formación en lógica, álgebra, cálculo y modelado matemático aplicado.',
+    },
+    {
+        'nombre': 'Informatica',
+        'modalidad': 'Presencial',
+        'descripcion': 'Carrera orientada al desarrollo de software, redes y sistemas de información.',
+    },
+    {
+        'nombre': 'Medicina',
+        'modalidad': 'A distancia',
+        'descripcion': 'Formación médica con enfoque en la investigación y la práctica clínica asistida.',
+    },
+]
 
-# ----------------------------------------
-# Crear Carreras
-# ----------------------------------------
-carreras = []
-modalidades = ['Presencial', 'A distancia']
-for _ in range(5):
-    carrera = Carrera.objects.create(
-        nombre=fake.word().title(),
-        modalidad=random.choice(modalidades),
-        descripcion=fake.text(max_nb_chars=100)
+for carrera_data in carreras:
+    carrera, created = Carrera.objects.get_or_create(
+        nombre=carrera_data['nombre'],
+        modalidad=carrera_data['modalidad'],
+        defaults={'descripcion': carrera_data['descripcion']}
     )
-    carreras.append(carrera)
+    if created:
+        print(f'✅ Carrera creada: {carrera.nombre} ({carrera.modalidad})')
+    else:
+        print(f'⚠️ Carrera ya existente: {carrera.nombre} ({carrera.modalidad})')
 
-# ----------------------------------------
-# Crear Usuarios y PerfilAlumno
-# ----------------------------------------
-alumnos = []
-for i in range(10):
-    user = User.objects.create_user(
-        username=f"alumno{i}",
-        email=f"alumno{i}@example.com",
-        first_name=fake.first_name(),
-        last_name=fake.last_name(),
-        password='1234'
-    )
-    perfil = PerfilAlumno.objects.create(
-        user=user,
-        dni=fake.unique.numerify(text='########'),
-        telefono=fake.phone_number(),
-        direccion=fake.address(),
-        carrera=random.choice(carreras),
-        estado_documentacion=random.choice([True, False]),
-        estado_pago=random.choice([True, False])
-    )
-    alumnos.append(perfil)
-
-# ----------------------------------------
-# Crear Tipos de Notificación
-# ----------------------------------------
-tipos_dict = {}  # para relacionar nombre -> objeto TipoNotificacion
-nombres_tipos = ['Pago pendiente', 'Falta documentación', 'Clase cancelada', 'Examen', 'Recordatorio']
-for nombre in nombres_tipos:
-    tipo = TipoNotificacion.objects.create(nombre_tipo=nombre)
-    tipos_dict[nombre] = tipo
-
-# ----------------------------------------
-# Crear Notificaciones con formato: "Alumno: Motivo"
-# ----------------------------------------
-for _ in range(20):
-    alumno = random.choice(alumnos)
-    motivo = random.choice(nombres_tipos)  # se usa la lista de motivos
-    Notificacion.objects.create(
-        alumno=alumno,
-        tipo=tipos_dict[motivo],  # coincide tipo con motivo
-        estado_envio=random.choice(['Enviado', 'Pendiente', 'Fallido']),
-        mensaje=f"{alumno.user.first_name} {alumno.user.last_name}: {motivo}"
-    )
-
-# ----------------------------------------
-# Crear Pagos
-# ----------------------------------------
-for _ in range(20):
-    Pago.objects.create(
-        alumno=random.choice(alumnos),
-        fecha_pago=fake.date_between(start_date='-1y', end_date='today'),
-        monto=Decimal(f"{random.randint(1000,5000)}.00"),
-        estado_pago=random.choice(['Pagado', 'Pendiente', 'Vencido']),
-        descripcion=fake.text(max_nb_chars=100)
-    )
-
-# ----------------------------------------
-# Crear Mensajes Internos
-# ----------------------------------------
-usuarios = list(User.objects.all())
-for _ in range(15):
-    remitente, destinatario = random.sample(usuarios, 2)
-    MensajeInterno.objects.create(
-        remitente=remitente,
-        destinatario=destinatario,
-        mensaje=fake.text(max_nb_chars=200),
-        leido=random.choice([True, False])
-    )
-
-print("✅ Datos de prueba generados correctamente.")
+print("🎓 Seed completado.")

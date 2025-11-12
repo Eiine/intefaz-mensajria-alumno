@@ -29,5 +29,6 @@ urlpatterns = [
 
     path('notificaciones/crear/', views.crear_notificacion, name='crear_notificacion'),
     
-    
+    #debug data
+     path('panelgeneral/', views.panel_general, name='panel_general'),
 ]

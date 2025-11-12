@@ -12,12 +12,10 @@
         <div class="flex-grow-1"></div>
 
         <!-- Icono de notificaciones -->
-       <!-- Icono de notificaciones -->
-<a href="{% url 'mensajes' %}" class="nav-link position-relative me-3">
-    <i class="bi bi-envelope-fill fs-5" style="color: white;"></i>
-    <span id="mensajes-punto" class="position-absolute top-0 start-100 translate-middle p-1 bg-danger rounded-circle" style="display:none;"></span>
-</a>
-
+        <a href="{% url 'mensajes' %}" class="nav-link position-relative me-3">
+            <i class="bi bi-envelope-fill fs-5" style="color: white;"></i>
+            <span id="mensajes-punto" class="position-absolute top-0 start-100 translate-middle p-1 bg-danger rounded-circle" style="display:none;"></span>
+        </a>
 
         <!-- Menú de perfil -->
         <div class="dropdown">
@@ -26,17 +24,22 @@
             </a>
 
             <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="perfilDropdown">
-                <li><a class="dropdown-item" href="{% url 'alumnos_lista' %}">Inicio</a></li>
-                   {% if user.is_staff %}
-                     <li><a class="dropdown-item active" href="{% url 'panel_admin' %}">Panel admin</a></li>
-                     <li><a class="dropdown-item active" href="{% url 'notificaciones' %}">Notificaciones</a></li>
-                     {% endif %}
-                
+                <li class="dropdown-item text-center fw-semibold" style="cursor: default;">
+                    👋 Hola, {{ user.first_name|default:user.username }}!
+                </li>
+                <li><hr class="dropdown-divider"></li>
 
-                   {% if not user.is_staff %}
-                    <li><a class="dropdown-item" href="{% url 'configuraciones' %}">Configuraciones</a></li>
-                    {% endif %}
+                <li><a class="dropdown-item" href="{% url 'alumnos_lista' %}">Inicio</a></li>
                 
+                {% if user.is_staff %}
+                    <li><a class="dropdown-item active" href="{% url 'panel_admin' %}">Panel admin</a></li>
+                    <li><a class="dropdown-item active" href="{% url 'notificaciones' %}">Notificaciones</a></li>
+                {% endif %}
+
+                {% if not user.is_staff %}
+                    <li><a class="dropdown-item" href="{% url 'configuraciones' %}">Configuraciones</a></li>
+                {% endif %}
+
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item" href="{% url 'logout' %}">Cerrar sesión</a></li>
             </ul>
@@ -44,30 +47,28 @@
     </div>
 
     <style>
-        /* Quitar color de fondo automático de los items activos */
         .dropdown-menu .dropdown-item.active {
             background-color: transparent !important;
             color: inherit !important;
         }
 
-        /* Mantener color al pasar el mouse */
         .dropdown-menu .dropdown-item:hover {
             background-color: #8B0000 !important;
             color: white !important;
         }
 
-        /* Badge estilo */
         .badge {
             padding: 0.25em 0.4em;
         }
     </style>
 </nav>
+
 <script>
- (function() {
+(function() {
     const usuarioActualId = parseInt("{{ request.user.id }}");
     
     function checkMensajesNuevos() {
-        fetch('/api/mensajes/nuevos/')  // Endpoint que devuelve {nuevos: X}
+        fetch('/api/mensajes/nuevos/')
             .then(resp => resp.json())
             .then(data => {
                 console.log(data.nuevos);
@@ -86,5 +87,4 @@
 
     checkMensajesNuevos();
 })();
-
 </script>

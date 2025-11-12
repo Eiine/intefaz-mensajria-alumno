@@ -260,42 +260,24 @@ def config(request):
     }
     return render(request, 'mensajes/Configuraciones.html', contexto)
 def mensajes_view(request):
-    """
-    Vista principal: muestra todos los usuarios (PerfilAlumno)
-    que tienen al menos un mensaje enviado o recibido.
-    """
-    perfiles = PerfilAlumno.objects.all()
+    getUsuarios = PerfilAlumno.objects.select_related('user').all()
+    usuarios = list(getUsuarios.values(
+    'user__id',          # ID real del User
+    'dni',
+    'telefono',
+    'user__first_name',
+    'user__last_name'
+))
 
-    return render(request, "mensajes/mensajeria.html", {"User": perfiles})
+    
+    usuarios_json = json.dumps(usuarios, default=str)
+    return render(request, "mensajes/mensajeria.html", {"usuarios": usuarios_json})
 
-    """
-    Devuelve todos los mensajes entre el usuario logueado y el usuario seleccionado.
-    """
-    usuario_actual = request.user
-
-    mensajes = MensajeInterno.objects.filter(
-        remitente__in=[usuario_actual, usuario_id],
-        destinatario__in=[usuario_actual, usuario_id]
-    ).order_by('fecha_envio')
-
-    data = [
-        {
-            "id": m.id,
-            "remitente": m.remitente.username,
-            "destinatario": m.destinatario.username,
-            "remitente_id": m.remitente.id,
-            "destinatario_id": m.destinatario.id,
-            "mensaje": m.mensaje,
-            "fecha_envio": m.fecha_envio.strftime("%Y-%m-%d %H:%M:%S"),
-        }
-        for m in mensajes
-    ]
-
-    return JsonResponse(data, safe=False)
+    
 def obtener_mensajes(request):
     try:
         mensajes = MensajeInterno.objects.all().order_by("fecha_envio")
-
+    
         data = []
         for m in mensajes:
             try:
@@ -304,22 +286,21 @@ def obtener_mensajes(request):
 
                 data.append({
                     "id": m.id,
-                    "remitente_id": m.remitente.id,
-                    "destinatario_id": m.destinatario.id,
+                    "remitente_id": m.remitente.user.id,      # <-- usar User.id
+                    "destinatario_id": m.destinatario.user.id,  # <-- usar User.id
                     "remitente": remitente_nombre,
                     "destinatario": destinatario_nombre,
                     "mensaje": m.mensaje,
                     "fecha_envio": m.fecha_envio.strftime("%Y-%m-%d %H:%M"),
                 })
             except PerfilAlumno.DoesNotExist:
-                # Saltamos mensajes cuyo remitente o destinatario ya no existe
                 continue
 
         return JsonResponse(data, safe=False)
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
-    
+
 @login_required
 
 def enviar_mensaje(request):
@@ -433,3 +414,19 @@ def marcar_leidos(request):
         return JsonResponse({"success": True, "total_no_leidos": total_no_leidos})
 
     return JsonResponse({"success": False, "error": "Método no permitido"})
+
+
+from django.shortcuts import render
+from .models import Carrera, PerfilAlumno, TipoNotificacion, Notificacion, Pago, MensajeInterno, Preferencia
+
+def panel_general(request):
+    context = {
+        'carreras': Carrera.objects.all(),
+        'alumnos': PerfilAlumno.objects.all(),
+        'tipos_notificacion': TipoNotificacion.objects.all(),
+        'notificaciones': Notificacion.objects.all(),
+        'pagos': Pago.objects.all(),
+        'mensajes': MensajeInterno.objects.all(),
+        'preferencias': Preferencia.objects.all(),
+    }
+    return render(request, 'mensajes/panel_general.html', context)
