@@ -429,4 +429,5 @@ def panel_general(request):
         'mensajes': MensajeInterno.objects.all(),
         'preferencias': Preferencia.objects.all(),
     }
+    comprobacion = list(MensajeInterno.objects.all())
     return render(request, 'mensajes/panel_general.html', context)

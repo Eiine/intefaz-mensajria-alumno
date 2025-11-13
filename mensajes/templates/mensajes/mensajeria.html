@@ -107,12 +107,10 @@ function mostrarConversacion() {
     container.innerHTML = '';
       
     const conversacion = mensajesData.filter(msg =>
-    (Number(msg.remitente_id) === usuarioActualId && Number(msg.destinatario_id) === alumnoSeleccionado) ||
-    (Number(msg.remitente_id) === alumnoSeleccionado && Number(msg.destinatario_id) === usuarioActualId)
-);
+        (Number(msg.remitente_id) === usuarioActualId && Number(msg.destinatario_id) === alumnoSeleccionado) ||
+        (Number(msg.remitente_id) === alumnoSeleccionado && Number(msg.destinatario_id) === usuarioActualId)
+    );
 
-   
-    
     conversacion.forEach(msg => {
         const div = document.createElement('div');
         div.className = 'mensaje p-2 my-1';
@@ -135,7 +133,27 @@ function mostrarConversacion() {
     
     container.appendChild(inputDiv);
     container.scrollTop = container.scrollHeight;
+
+    // 🔹 MARCAR MENSAJES COMO LEÍDOS
+    if (alumnoSeleccionado) {
+        fetch('/api/mensajes/marcar_leidos/', {
+            method: 'POST',
+            headers: { 
+                "Content-Type": "application/json", 
+                "X-CSRFToken": getCookie("csrftoken") 
+            },
+            body: JSON.stringify({ remitente_id: alumnoSeleccionado })
+        })
+        .then(resp => resp.json())
+        .then(data => {
+            if (data.success) {
+                console.log(`Mensajes marcados como leídos. Total pendientes: ${data.total_no_leidos}`);
+                // Aquí podrías actualizar un contador de mensajes no leídos si querés
+            }
+        });
+    }
 }
+
 
 // 🔹 Enviar mensaje
 function enviarMensaje() {
@@ -225,6 +243,44 @@ document.getElementById('buscador-usuarios').addEventListener('keyup', () => {
     
     renderizarUsuarios(filtrados.map(f => f.user__id));
 });
+
+//funcion de actualizacion de mensajes cada 5 segundos
+setInterval(() => {
+    // 🔹 Guardar el texto que el usuario está escribiendo (si existe)
+    const input = document.getElementById('mensaje-texto');
+    const textoEscrito = input ? input.value : '';
+    const tieneFoco = input === document.activeElement;
+
+    // 🔹 Pedir los mensajes al backend
+    fetch(`/api/mensajes/`)
+        .then(resp => resp.json())
+        .then(data => {
+            mensajesData = data;
+
+            // Reconstruir lista de usuarios con conversación
+            usuariosConversacion = {};
+            data.forEach(msg => {
+                const otroId = msg.remitente_id === usuarioActualId ? msg.destinatario_id : msg.remitente_id;
+                const otroNombre = msg.remitente_id === usuarioActualId ? msg.destinatario : msg.remitente;
+                usuariosConversacion[otroId] = otroNombre;
+            });
+
+            renderizarUsuarios(); // Renderizar solo usuarios con conversación
+
+            // Si hay un alumno seleccionado, actualizar la conversación
+            if (alumnoSeleccionado) {
+                mostrarConversacion();
+            }
+
+            // 🔹 Restaurar el texto escrito después de refrescar
+            const nuevoInput = document.getElementById('mensaje-texto');
+            if (nuevoInput) {
+                nuevoInput.value = textoEscrito;
+                if (tieneFoco) nuevoInput.focus(); // volver a enfocar si lo estaba
+            }
+        });
+}, 5000);
+
 </script>
 </body>
 </html>

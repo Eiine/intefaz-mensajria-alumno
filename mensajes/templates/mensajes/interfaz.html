@@ -285,7 +285,8 @@ if (esStaff) {
 // =========================
 // 🔔 Cargar notificaciones (solo para usuario no staff)
 // =========================
-if (!esStaff) {
+
+function cargarNotificaciones() {
     const contenedor = document.getElementById("notificaciones-container");
     const sinMsg = document.getElementById("no-notificaciones-msg");
     const alumnoId = parseInt("{{ user.perfilalumno.id }}");
@@ -323,6 +324,12 @@ if (!esStaff) {
             sinMsg.style.display = "block";
         });
 }
+
+if (!esStaff) {
+    cargarNotificaciones();
+    setInterval(cargarNotificaciones, 15000);
+}
+
 </script>
 </body>
 </html>
