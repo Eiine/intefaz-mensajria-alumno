@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -139,6 +140,7 @@
     </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
 <script>
 const searchInput = document.getElementById("search-input");
 const searchBtn = document.getElementById("btn-buscar");
@@ -294,6 +296,7 @@ function cargarNotificaciones() {
         .then(res => res.json())
         .then(data => {
             console.log(data.notificaciones);
+            contenedor.innerHTML = ""
             if (!data || data.length === 0) {
                 sinMsg.style.display = "block";
                 return;
@@ -310,12 +313,18 @@ function cargarNotificaciones() {
 
                 card.classList.add("border-start", "border-4", color);
                 card.innerHTML = `
-                    <div class="card-body">
-                        <h6 class="fw-bold mb-1">${n.tipo_nombre || n.tipo}</h6>
-                        <p class="mb-1">${n.mensaje || ""}</p>
-                        <small class="text-muted">Estado: ${n.estado_envio || "Pendiente"} | Canal: ${n.canal || "N/A"}</small>
-                    </div>
-                `;
+    <div class="card-body position-relative">
+        <h6 class="fw-bold mb-1">${n.tipo_nombre || n.tipo}</h6>
+        <p class="mb-1">${n.mensaje || ""}</p>
+        <small class="text-muted position-absolute" style="top: 0.5rem; right: 1rem;">
+            ${n.fecha_envio}
+        </small>
+    </div>
+    <div class="card-footer text-muted">
+        Estado: ${"leido" || "Pendiente"} | Canal: ${n.canal || "N/A"}
+    </div>
+`;
+
                 contenedor.appendChild(card);
             });
         })

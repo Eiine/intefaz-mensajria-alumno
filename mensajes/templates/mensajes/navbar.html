@@ -66,25 +66,49 @@
 <script>
 (function() {
     const usuarioActualId = parseInt("{{ request.user.id }}");
+    let sonido = new Audio("{% static 'sonidos/notificacion.mp3' %}");
+
+    // 🔹 Usamos clave distinta por usuario para evitar conflictos
+    const key = 'mensajes_nuevos_' + usuarioActualId;
     
+    // 🔹 Último estado guardado, si no hay nada, null
+    let ultimoEstado = localStorage.getItem(key);
+    if (ultimoEstado !== null) {
+        ultimoEstado = parseInt(ultimoEstado);
+    } else {
+        ultimoEstado = null; // primera vez que entra el usuario
+    }
+
     function checkMensajesNuevos() {
         fetch('/api/mensajes/nuevos/')
             .then(resp => resp.json())
             .then(data => {
-                console.log(data.nuevos);
-                
+                const nuevos = data.nuevos || 0;
                 const punto = document.getElementById('mensajes-punto');
                 if (!punto) return;
 
-                if (data.nuevos && data.nuevos > 0) {
+                if (nuevos > 0) {
                     punto.style.display = 'inline-block';
+                    
+                    // 🔔 Solo sonar si hay un mensaje nuevo y no es la primera carga
+                    if (ultimoEstado !== null && nuevos > ultimoEstado) {
+                        sonido.play().catch(err => console.log("No se pudo reproducir el sonido:", err));
+                    }
                 } else {
                     punto.style.display = 'none';
                 }
+
+                // 🔹 Guardar estado actual en localStorage
+                ultimoEstado = nuevos;
+                localStorage.setItem(key, nuevos);
             })
             .catch(err => console.error('Error al consultar mensajes nuevos:', err));
     }
 
+    // Comprobar cada 5 segundos
     checkMensajesNuevos();
+    setInterval(checkMensajesNuevos, 5000);
 })();
+
+
 </script>

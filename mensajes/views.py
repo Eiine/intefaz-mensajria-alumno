@@ -13,6 +13,7 @@ import json
 from django.db.models import Q
 from django.contrib.auth.models import User
 from .models import Preferencia
+from django.utils.timezone import localtime
 def login_view(request):
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -285,14 +286,16 @@ def obtener_mensajes(request):
                 destinatario_nombre = f"{m.destinatario.user.first_name} {m.destinatario.user.last_name}"
 
                 data.append({
-                    "id": m.id,
-                    "remitente_id": m.remitente.user.id,      # <-- usar User.id
-                    "destinatario_id": m.destinatario.user.id,  # <-- usar User.id
-                    "remitente": remitente_nombre,
-                    "destinatario": destinatario_nombre,
-                    "mensaje": m.mensaje,
-                    "fecha_envio": m.fecha_envio.strftime("%Y-%m-%d %H:%M"),
-                })
+                            "id": m.id,
+                            "remitente_id": m.remitente.user.id,
+                            "destinatario_id": m.destinatario.user.id,
+                            "remitente": remitente_nombre,
+                            "destinatario": destinatario_nombre,
+                            "mensaje": m.mensaje,
+                            "fecha_envio": localtime(m.fecha_envio).strftime("%Y-%m-%d %H:%M"),
+                            "leido": m.leido
+                            })
+
             except PerfilAlumno.DoesNotExist:
                 continue
 
@@ -419,6 +422,54 @@ def marcar_leidos(request):
 from django.shortcuts import render
 from .models import Carrera, PerfilAlumno, TipoNotificacion, Notificacion, Pago, MensajeInterno, Preferencia
 
+
+def circular(request):
+    if request.method != "POST":
+        return JsonResponse({"error": "Método no permitido"}, status=405)
+
+    try:
+        data = json.loads(request.body)
+        mensaje = data.get("mensaje")
+        carrera_nombre = data.get("carrera")
+        nombre_tipo = data.get("nombre_tipo")  # 👈 NUEVO (dinámico)
+
+        if not nombre_tipo:
+            return JsonResponse({"error": "nombre_tipo no enviado"}, status=400)
+
+        if not mensaje or not carrera_nombre:
+            return JsonResponse({"error": "Datos incompletos"}, status=400)
+
+        # Buscar carrera
+        carrera = None
+        alumnos = PerfilAlumno.objects.all()
+
+        if carrera_nombre != "Todas":
+            carrera = Carrera.objects.filter(nombre=carrera_nombre).first()
+            if not carrera:
+                return JsonResponse({"error": "La carrera no existe"}, status=400)
+            alumnos = alumnos.filter(carrera=carrera)
+
+        # Crear TipoNotificacion dinámico
+        tipo = TipoNotificacion.objects.create(
+            nombre_tipo=nombre_tipo,   # 👈 AQUÍ VA LO DINÁMICO
+            canal="Email",
+            carrera=carrera
+        )
+
+        # Crear Notificación
+        notif = Notificacion.objects.create(
+            tipo=tipo,
+            estado_envio="Pendiente",
+            mensaje=mensaje,
+        )
+
+        notif.alumnos.set(alumnos)
+
+        return JsonResponse({"ok": True, "id": notif.id})
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+    
 def panel_general(request):
     context = {
         'carreras': Carrera.objects.all(),

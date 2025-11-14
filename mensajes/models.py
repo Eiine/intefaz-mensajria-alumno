@@ -64,7 +64,7 @@ class Notificacion(models.Model):
     alumnos = models.ManyToManyField('PerfilAlumno')
     tipo = models.ForeignKey(TipoNotificacion, on_delete=models.CASCADE)
     fecha_envio = models.DateTimeField(auto_now_add=True)
-    estado_envio = models.CharField(max_length=50)  # "Enviado", "Fallido", "Pendiente"
+    estado_envio = models.CharField(max_length=50)  # "Enviado", "Fallido", "Pendiente","visto"
     mensaje = models.TextField(default="mensaje por defecto")
 
     def __str__(self):
