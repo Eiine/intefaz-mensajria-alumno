@@ -452,7 +452,7 @@ def circular(request):
         # Crear TipoNotificacion dinámico
         tipo = TipoNotificacion.objects.create(
             nombre_tipo=nombre_tipo,   # 👈 AQUÍ VA LO DINÁMICO
-            canal="Email",
+            canal="Plataforma",
             carrera=carrera
         )
 
