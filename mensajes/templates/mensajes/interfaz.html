@@ -225,10 +225,28 @@ if (esStaff) {
             alumnoSeleccionado = card.dataset.alumnoId;
             const nombre = btn.dataset.nombre;
 
-            tipoSelect.selectedIndex = 0;
-            tipoEnvio = btn.classList.contains("send-whatsapp") ? "WhatsApp" : "Email";
-            mensajeTextarea.value = `Hola ${nombre}, desde administración, nos comunicamos con usted para:`;
-            mensajeModal.show();
+            // 🔹 Verificamos si ya fue notificado hoy
+            fetch(`/ajax/notificaciones/${alumnoSeleccionado}/`)
+                .then(res => res.json())
+                .then(data => {
+                    const hoy = new Date().toISOString().split('T')[0];
+                    const yaNotificado = data.notificaciones.some(n => n.fecha_envio.startsWith(hoy));
+
+                    if (yaNotificado) {
+                        alert(`⚠️ ${nombre} ya recibió una notificación hoy.`);
+                        return; // ❌ No abrimos el modal
+                    }
+
+                    // 🔹 Si no tiene notificación hoy, abrimos el modal
+                    tipoSelect.selectedIndex = 0;
+                    tipoEnvio = btn.classList.contains("send-whatsapp") ? "WhatsApp" : "Email";
+                    mensajeTextarea.value = `Hola ${nombre}, desde administración, nos comunicamos con usted para:`;
+                    mensajeModal.show();
+                })
+                .catch(err => {
+                    console.error("Error verificando notificaciones:", err);
+                    alert("❌ No se pudo verificar si el alumno ya fue notificado.");
+                });
         });
     });
 
@@ -256,31 +274,40 @@ if (esStaff) {
         })
         .then(res => res.json())
         .then(data => {
-            if (!data.success) {
-                console.error(data.error);
-                alert("❌ Error al guardar la notificación.");
-            } else {
-                alert("✅ Notificación enviada correctamente.");
+
+            // ⚠️ Si el backend detectó que ya se notificó hoy
+            if (data.warning) {
+                alert("⚠️ " + data.message);
+                return;
             }
+
+            // ❌ Error general
+            if (!data.success) {
+                alert("❌ Error: " + (data.error || "No se pudo guardar la notificación."));
+                return;
+            }
+
+            // ✅ Caso exitoso
+            alert("✅ Notificación enviada correctamente.");
+
+            const card = document.querySelector(`.alumno-card[data-alumno-id="${alumnoSeleccionado}"]`);
+            if (tipoEnvio === "WhatsApp") {
+                const telefono = card.querySelector(".send-whatsapp").dataset.telefono;
+                window.open(`https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`, "_blank");
+            } else {
+                const email = card.querySelector(".send-email").dataset.email;
+                window.open(
+                    `https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${encodeURIComponent("Comunicación desde administración")}&body=${encodeURIComponent(mensaje)}`,
+                    "_blank"
+                );
+            }
+
+            mensajeModal.hide();
         })
         .catch(err => {
             console.error("Error al guardar notificación:", err);
             alert("❌ Ocurrió un error al enviar la notificación.");
         });
-
-        const card = document.querySelector(`.alumno-card[data-alumno-id="${alumnoSeleccionado}"]`);
-        if (canal === "WhatsApp") {
-            const telefono = card.querySelector(".send-whatsapp").dataset.telefono;
-            window.open(`https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`, "_blank");
-        } else {
-            const email = card.querySelector(".send-email").dataset.email;
-            window.open(
-                `https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${encodeURIComponent("Comunicación desde administración")}&body=${encodeURIComponent(mensaje)}`,
-                "_blank"
-            );
-        }
-
-        mensajeModal.hide();
     });
 }
 

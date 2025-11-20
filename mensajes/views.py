@@ -14,6 +14,8 @@ from django.db.models import Q
 from django.contrib.auth.models import User
 from .models import Preferencia
 from django.utils.timezone import localtime
+from django.utils import timezone
+from django.db.models import DateTimeField, DateField
 def login_view(request):
     if request.method == 'POST':
         username = request.POST.get('username')
@@ -149,13 +151,27 @@ def crear_notificacion(request):
             if not alumno_id or not tipo_nombre:
                 return JsonResponse({"success": False, "error": "Datos incompletos."}, status=400)
 
-            # ✅ Buscar el alumno
+            # Buscar el alumno
             try:
                 alumno = PerfilAlumno.objects.get(id=alumno_id)
             except PerfilAlumno.DoesNotExist:
                 return JsonResponse({"success": False, "error": "Alumno no encontrado."}, status=404)
 
-            # ✅ Crear o recuperar el tipo de notificación
+            # 🛑 VALIDACIÓN: verificar si tiene notificación HOY
+            hoy = timezone.now().date()
+
+            notificacion_hoy = Notificacion.objects.filter(
+                alumnos=alumno,
+                fecha_envio__date=hoy  # <-- muy importante
+            ).exists()
+
+            if notificacion_hoy:
+                return JsonResponse({
+                    "success": False,
+                    "error": "El alumno ya fue notificado el día de hoy."
+                }, status=409)
+
+            # Crear o recuperar tipo de notificación
             tipo_notif, created = TipoNotificacion.objects.get_or_create(
                 nombre_tipo=tipo_nombre,
                 defaults={
@@ -164,14 +180,14 @@ def crear_notificacion(request):
                 }
             )
 
-            # ✅ Crear la notificación
+            # Crear notificación
             notificacion = Notificacion.objects.create(
                 tipo=tipo_notif,
                 mensaje=mensaje,
                 estado_envio=estado_envio
             )
 
-            # ✅ Asociar el alumno a la notificación (ManyToMany)
+            # Asociar alumno
             notificacion.alumnos.add(alumno)
 
             return JsonResponse({
