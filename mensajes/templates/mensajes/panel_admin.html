@@ -92,6 +92,7 @@ document.addEventListener("DOMContentLoaded", function() {
                             <button class="btn btn-sm btn-outline-primary filtro-btn" data-tipo="Pago pendiente">Pago pendiente</button>
                             <button class="btn btn-sm btn-outline-primary filtro-btn" data-tipo="Recordatorio">Recordatorio</button>
                             <button class="btn btn-sm btn-outline-primary filtro-btn" data-tipo="WhatsApp">WhatsApp</button>
+                             <button class="btn btn-sm btn-outline-secondary filtro-btn" data-tipo="Email">Email</button>
                             <button class="btn btn-sm btn-outline-secondary filtro-btn" data-tipo="Todos">Todos</button>
                         </div>
                     `;
@@ -99,7 +100,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     if(data.notificaciones.length > 0){
                         data.notificaciones.forEach(n => {
                             html += `
-                                <div class="message border rounded p-2 mb-2" data-tipo="${n.tipo}">
+                                <div class="message border rounded p-2 mb-2" data-tipo="${n.tipo}" data-canal="${n.canal}">
                                     <div class="d-flex justify-content-between">
                                         <strong>${n.tipo}</strong>
                                         <small class="text-muted">${n.fecha_envio}</small>
@@ -117,15 +118,22 @@ document.addEventListener("DOMContentLoaded", function() {
 
                     // Funcionalidad de filtrado
                     const filtroBtns = messagesDiv.querySelectorAll(".filtro-btn");
+                    
                     filtroBtns.forEach(btn => {
+                    
+                    
                         btn.addEventListener("click", function() {
                             const tipo = this.dataset.tipo;
+                            
                             const mensajes = messagesDiv.querySelectorAll(".message");
+                            console.log(mensajes);
+                            
                             mensajes.forEach(m => {
-                                if(tipo === "Todos" || m.dataset.tipo === tipo){
-                                    m.style.display = "";
-                                } else {
-                                    m.style.display = "none";
+                                
+                               if (tipo === "Todos" || m.dataset.tipo === tipo ||m.dataset.canal === tipo) {
+                                        m.style.display = "";
+                                    } else {
+                                        m.style.display = "none";
                                 }
                             });
                         });
