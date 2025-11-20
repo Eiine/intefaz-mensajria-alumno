@@ -77,9 +77,11 @@ class Notificacion(models.Model):
 class Pago(models.Model):
     alumno = models.ForeignKey(PerfilAlumno, on_delete=models.CASCADE)
     fecha_pago = models.DateField()
+    fecha_vencimiento = models.DateField(null=True, blank=True)
     monto = models.DecimalField(max_digits=10, decimal_places=2)
     estado_pago = models.CharField(max_length=20)  # "Pagado", "Pendiente", "Vencido"
     descripcion = models.TextField(blank=True, null=True)
+    aviso_enviado = models.BooleanField(default=False)  # <-- IMPORTANTE
 
     def __str__(self):
         return f"Pago de {self.alumno} - {self.estado_pago} - {self.monto}"

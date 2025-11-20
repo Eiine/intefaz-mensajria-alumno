@@ -1,6 +1,7 @@
 # admin.py
 from django.contrib import admin
-from .models import PerfilAlumno
+from mensajes.models import Pago, Notificacion, PerfilAlumno, TipoNotificacion
+from django.utils import timezone
 
 @admin.register(PerfilAlumno)
 class AlumnoAdmin(admin.ModelAdmin):
