@@ -157,18 +157,18 @@ def crear_notificacion(request):
             except PerfilAlumno.DoesNotExist:
                 return JsonResponse({"success": False, "error": "Alumno no encontrado."}, status=404)
 
-            # 🛑 VALIDACIÓN: verificar si tiene notificación HOY
+            # 🛑 VALIDACIÓN: verificar si tiene notificación HOY del mismo tipo
             hoy = timezone.now().date()
-
-            notificacion_hoy = Notificacion.objects.filter(
+            notificacion_hoy_mismo_tipo = Notificacion.objects.filter(
                 alumnos=alumno,
-                fecha_envio__date=hoy  # <-- muy importante
+                tipo__nombre_tipo=tipo_nombre,
+                fecha_envio__date=hoy
             ).exists()
 
-            if notificacion_hoy:
+            if notificacion_hoy_mismo_tipo:
                 return JsonResponse({
                     "success": False,
-                    "error": "El alumno ya fue notificado el día de hoy."
+                    "error": f"El alumno ya recibió hoy una notificación de tipo '{tipo_nombre}'."
                 }, status=409)
 
             # Crear o recuperar tipo de notificación

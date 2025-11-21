@@ -356,7 +356,15 @@ setInterval(() => {
                 if (tieneFoco) nuevoInput.focus();
             }
         });
-}, 15000);
+},30000);
+
+document.addEventListener('keydown', function(e) {
+    const input = document.getElementById('mensaje-texto');
+    if (input && e.target === input && e.key === 'Enter') {
+        e.preventDefault();
+        enviarMensaje();
+    }
+});
 
 </script>
 </body>

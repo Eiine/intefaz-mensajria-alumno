@@ -227,16 +227,19 @@ if (esStaff) {
 
             // 🔹 Verificamos si ya fue notificado hoy
             fetch(`/ajax/notificaciones/${alumnoSeleccionado}/`)
-                .then(res => res.json())
-                .then(data => {
-                    const hoy = new Date().toISOString().split('T')[0];
-                    const yaNotificado = data.notificaciones.some(n => n.fecha_envio.startsWith(hoy));
+    .then(res => res.json())
+    .then(data => {
+        const hoy = new Date().toISOString().split('T')[0];
+        const tipoSeleccionado = tipoSelect.value;
 
-                    if (yaNotificado) {
-                        alert(`⚠️ ${nombre} ya recibió una notificación hoy.`);
-                        return; // ❌ No abrimos el modal
-                    }
+        const yaNotificadoMismoTipo = data.notificaciones.some(n =>
+            n.fecha_envio.startsWith(hoy) && n.tipo_nombre === tipoSeleccionado
+        );
 
+        if (yaNotificadoMismoTipo) {
+            alert(`⚠️ ${nombre} ya recibió una notificación de tipo "${tipoSeleccionado}" hoy.`);
+            return; // ❌ Bloquea solo si ya recibió este tipo
+        }
                     // 🔹 Si no tiene notificación hoy, abrimos el modal
                     tipoSelect.selectedIndex = 0;
                     tipoEnvio = btn.classList.contains("send-whatsapp") ? "WhatsApp" : "Email";
