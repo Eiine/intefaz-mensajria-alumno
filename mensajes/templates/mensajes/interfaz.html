@@ -333,30 +333,51 @@ function cargarNotificaciones() {
             }
 
             data.notificaciones.forEach(n => {
-                const card = document.createElement("div");
-                card.className = "card shadow-sm text-start";
+    // 1️⃣ Limpiar string
+const fechaLimpia = n.fecha_envio.trim().replace(/[\r\n\t]/g, '');
 
-                let color = "border-primary";
-                if (n.tipo_nombre && n.tipo_nombre.toLowerCase().includes("pago")) color = "border-warning";
-                else if (n.tipo_nombre && n.tipo_nombre.toLowerCase().includes("document")) color = "border-danger";
-                else if (n.tipo_nombre && n.tipo_nombre.toLowerCase().includes("recordatorio")) color = "border-info";
+// 2️⃣ Separar fecha y hora
+const [fechaPart, horaPart] = fechaLimpia.split(' '); // ["14/11/2025", "03:08"]
 
-                card.classList.add("border-start", "border-4", color);
-                card.innerHTML = `
-    <div class="card-body position-relative">
-        <h6 class="fw-bold mb-1">${n.tipo_nombre || n.tipo}</h6>
-        <p class="mb-1">${n.mensaje || ""}</p>
-        <small class="text-muted position-absolute" style="top: 0.5rem; right: 1rem;">
-            ${n.fecha_envio}
-        </small>
-    </div>
-    <div class="card-footer text-muted">
-        Estado: ${"leido" || "Pendiente"} | Canal: ${n.canal || "N/A"}
-    </div>
-`;
+// 3️⃣ Separar día, mes y año
+const [dia, mes, anio] = fechaPart.split('/').map(x => parseInt(x));
 
-                contenedor.appendChild(card);
-            });
+// 4️⃣ Separar hora y minuto
+const [hora, minuto] = horaPart.split(':').map(x => parseInt(x));
+
+// 5️⃣ Crear objeto Date
+const fechaOriginal = new Date(anio, mes - 1, dia, hora, minuto);
+
+// 6️⃣ Restar 3 horas
+fechaOriginal.setHours(fechaOriginal.getHours() - 3);
+
+// 7️⃣ Formatear para mostrar
+const fechaFormateada = fechaOriginal.toLocaleString();
+
+    const card = document.createElement("div");
+    card.className = "card shadow-sm text-start";
+
+    let color = "border-primary";
+    if (n.tipo_nombre && n.tipo_nombre.toLowerCase().includes("pago")) color = "border-warning";
+    else if (n.tipo_nombre && n.tipo_nombre.toLowerCase().includes("document")) color = "border-danger";
+    else if (n.tipo_nombre && n.tipo_nombre.toLowerCase().includes("recordatorio")) color = "border-info";
+
+    card.classList.add("border-start", "border-4", color);
+    card.innerHTML = `
+        <div class="card-body position-relative">
+            <h6 class="fw-bold mb-1">${n.tipo_nombre || n.tipo}</h6>
+            <p class="mb-1">${n.mensaje || ""}</p>
+            <small class="text-muted position-absolute" style="top: 0.5rem; right: 1rem;">
+                ${fechaFormateada}
+            </small>
+        </div>
+        <div class="card-footer text-muted">
+            Estado: ${"leido" || "Pendiente"} | Canal: ${n.canal || "N/A"}
+        </div>
+    `;
+
+    contenedor.appendChild(card);
+});
         })
         .catch(err => {
             console.error("Error cargando notificaciones:", err);
