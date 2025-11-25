@@ -31,5 +31,8 @@ urlpatterns = [
     path('notificaciones/crear/', views.crear_notificacion, name='crear_notificacion'),
     
     #debug data
-     path('panelgeneral/', views.panel_general, name='panel_general'),
+    path('panelgeneral/', views.panel_general, name='panel_general'),
+    # ... tus URLs existentes ...
+    path('reporte-notificaciones/', views.reporte_notificaciones, name='reporte_notificaciones'),
+    
 ]

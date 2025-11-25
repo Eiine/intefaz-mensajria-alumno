@@ -82,7 +82,7 @@ def filtrar_alumnos(request):
     # --- Filtro por TAG ---
     if tag == 'pago':
         alumnos = alumnos.filter(estado_pago=False)
-    elif tag == 'falta de documentación':
+    elif tag == 'Falta documentación':
         alumnos = alumnos.filter(estado_documentacion=False)
     elif tag == 'tarea':
         alumnos = alumnos.filter(
@@ -204,26 +204,249 @@ def crear_notificacion(request):
 
     return JsonResponse({"success": False, "error": "Método no permitido"}, status=405)
 
+from django.db.models import Q
+from mensajes.models import PerfilAlumno, Notificacion, Carrera
+
 def panel_admin(request):
-    # Traer todos los alumnos que no son staff
-    alumnos = PerfilAlumno.objects.filter(user__is_staff=False).order_by('user__first_name')
-
-    print(alumnos)
-    # Tomar el primer alumno de la lista
-    alumno_seleccionado = alumnos.first() if alumnos.exists() else None
-
-    # Traer todas las notificaciones del alumno seleccionado
+    # ═══════════════════════════════════════════════════════════════
+    # PASO 1: OBTENER TODOS LOS ALUMNOS (NO STAFF)
+    # ═══════════════════════════════════════════════════════════════
+    alumnos = PerfilAlumno.objects.filter(user__is_staff=False).select_related('user', 'carrera')
+    
+    # Guardar el total antes de filtrar
+    total_alumnos_sin_filtrar = alumnos.count()
+    
+    # ═══════════════════════════════════════════════════════════════
+    # PASO 2: APLICAR FILTROS
+    # ═══════════════════════════════════════════════════════════════
+    
+    # FILTRO 1: Búsqueda por texto (nombre, apellido, DNI, teléfono)
+    query = request.GET.get('q', '').strip()
+    if query:
+        alumnos = alumnos.filter(
+            Q(user__first_name__icontains=query) |
+            Q(user__last_name__icontains=query) |
+            Q(dni__icontains=query) |
+            Q(telefono__icontains=query) |
+            Q(user__email__icontains=query)  # Bonus: también busca por email
+        )
+    
+    # FILTRO 2: Por carrera (desplegable)
+    carrera_id = request.GET.get('carrera', '').strip()
+    if carrera_id:
+        alumnos = alumnos.filter(carrera_id=carrera_id)
+    
+    # FILTRO 3: Por estado (activo/inactivo)
+    estado = request.GET.get('estado', '').strip()
+    if estado == 'activo':
+        # Filtrar por algún campo que indique estado activo
+        # Si no tienes campo 'activo', puedes usar otro criterio
+        # Por ejemplo, por estado_pago o estado_documentacion
+        pass  # Ajusta según tu lógica
+    elif estado == 'inactivo':
+        pass  # Ajusta según tu lógica
+    
+    # Ordenar por nombre
+    alumnos = alumnos.order_by('user__first_name', 'user__last_name')
+    
+    # ═══════════════════════════════════════════════════════════════
+    # PASO 3: SELECCIÓN DE ALUMNO
+    # ═══════════════════════════════════════════════════════════════
+    
+    # Si hay un alumno específico seleccionado en la URL
+    alumno_id = request.GET.get('alumno_id', '')
+    if alumno_id:
+        try:
+            alumno_seleccionado = alumnos.get(id=alumno_id)
+        except PerfilAlumno.DoesNotExist:
+            alumno_seleccionado = alumnos.first() if alumnos.exists() else None
+    else:
+        # Tomar el primer alumno de la lista filtrada
+        alumno_seleccionado = alumnos.first() if alumnos.exists() else None
+    
+    # ═══════════════════════════════════════════════════════════════
+    # PASO 4: TRAER NOTIFICACIONES DEL ALUMNO SELECCIONADO
+    # ═══════════════════════════════════════════════════════════════
     notificaciones = []
     if alumno_seleccionado:
-        notificaciones = Notificacion.objects.filter(alumnos=alumno_seleccionado).order_by('-fecha_envio')
-
+        notificaciones = Notificacion.objects.filter(
+            alumnos=alumno_seleccionado
+        ).order_by('-fecha_envio')
+    
+    # ═══════════════════════════════════════════════════════════════
+    # PASO 5: PREPARAR DATOS PARA LOS DESPLEGABLES
+    # ═══════════════════════════════════════════════════════════════
+    
+    # Obtener todas las carreras
+    carreras = Carrera.objects.all().order_by('nombre')
+    
+    # ═══════════════════════════════════════════════════════════════
+    # PASO 6: CONTEXTO PARA EL TEMPLATE
+    # ═══════════════════════════════════════════════════════════════
     context = {
+        # Datos originales
         'alumnos': alumnos,
         'alumno_seleccionado': alumno_seleccionado,
         'notificaciones': notificaciones,
+        
+        # Datos nuevos para los filtros
+        'carreras': carreras,
+        'query': query,
+        'carrera_seleccionada': carrera_id,
+        'estado_seleccionado': estado,
+        
+        # Estadísticas útiles
+        'total_alumnos': total_alumnos_sin_filtrar,
+        'filtros_activos': bool(query or carrera_id or estado),
     }
 
     return render(request, 'mensajes/panel_admin.html', context)
+
+# ═══════════════════════════════════════════════════════════════════
+# VISTA: REPORTE DE NOTIFICACIONES POR ALUMNO
+# Grupo 9 - Alumno 1: Reporte con filtros y listado de resultados
+# ═══════════════════════════════════════════════════════════════════
+@login_required
+def reporte_notificaciones(request):
+    """
+    Reporte de notificaciones con filtros avanzados.
+    Permite filtrar por rango de fechas, alumno, tipo de evento, estado y canal.
+    Muestra indicadores y tabla de resultados.
+    """
+    
+    # ═══════════════════════════════════════════════════════════════
+    # PASO 1: OBTENER TODAS LAS NOTIFICACIONES
+    # ═══════════════════════════════════════════════════════════════
+    notificaciones = Notificacion.objects.select_related(
+        'tipo'
+    ).prefetch_related('alumnos__user', 'alumnos__carrera')
+    
+    # ═══════════════════════════════════════════════════════════════
+    # PASO 2: APLICAR FILTROS
+    # ═══════════════════════════════════════════════════════════════
+    
+    # FILTRO 1: Rango de fechas (fecha de envío)
+    fecha_desde = request.GET.get('fecha_desde', '').strip()
+    fecha_hasta = request.GET.get('fecha_hasta', '').strip()
+    
+    if fecha_desde:
+        try:
+            from datetime import datetime
+            fecha_desde_obj = datetime.strptime(fecha_desde, '%Y-%m-%d')
+            notificaciones = notificaciones.filter(fecha_envio__gte=fecha_desde_obj)
+        except ValueError:
+            pass
+    
+    if fecha_hasta:
+        try:
+            from datetime import datetime
+            fecha_hasta_obj = datetime.strptime(fecha_hasta, '%Y-%m-%d')
+            # Agregar 23:59:59 para incluir todo el día
+            fecha_hasta_obj = fecha_hasta_obj.replace(hour=23, minute=59, second=59)
+            notificaciones = notificaciones.filter(fecha_envio__lte=fecha_hasta_obj)
+        except ValueError:
+            pass
+    
+    # FILTRO 2: Búsqueda por alumno (nombre, apellido, DNI)
+    alumno_query = request.GET.get('alumno', '').strip()
+    if alumno_query:
+        notificaciones = notificaciones.filter(
+            Q(alumnos__user__first_name__icontains=alumno_query) |
+            Q(alumnos__user__last_name__icontains=alumno_query) |
+            Q(alumnos__dni__icontains=alumno_query)
+        )
+    
+    # FILTRO 3: Tipo de evento
+    tipo_evento = request.GET.get('tipo_evento', '').strip()
+    if tipo_evento:
+        notificaciones = notificaciones.filter(tipo_id=tipo_evento)
+    
+    # FILTRO 4: Estado de envío
+    estado_envio = request.GET.get('estado_envio', '').strip()
+    if estado_envio:
+        notificaciones = notificaciones.filter(estado_envio=estado_envio)
+    
+    # FILTRO 5: Canal de envío (si existe en tu modelo)
+    canal = request.GET.get('canal', '').strip()
+    if canal:
+        # Ajusta según tu modelo - puede ser tipo__canal o un campo directo
+        notificaciones = notificaciones.filter(tipo__canal=canal)
+    
+    # Ordenar por fecha de envío descendente (más recientes primero)
+    notificaciones = notificaciones.order_by('-fecha_envio')
+    
+    # Eliminar duplicados
+    notificaciones = notificaciones.distinct()
+    
+    # ═══════════════════════════════════════════════════════════════
+    # PASO 3: CALCULAR INDICADORES
+    # ═══════════════════════════════════════════════════════════════
+    
+    total_notificaciones = notificaciones.count()
+    
+    # Contar notificaciones fallidas
+    notificaciones_fallidas = notificaciones.filter(
+        estado_envio='Fallido'
+    ).count()
+    
+    # Contar por estado
+    notificaciones_enviadas = notificaciones.filter(estado_envio='Enviado').count()
+    notificaciones_entregadas = notificaciones.filter(estado_envio='Entregado').count()
+    notificaciones_pendientes = notificaciones.filter(estado_envio='Pendiente').count()
+    
+    # ═══════════════════════════════════════════════════════════════
+    # PASO 4: PREPARAR DATOS PARA FILTROS
+    # ═══════════════════════════════════════════════════════════════
+    
+    # Obtener todos los tipos de notificación
+    tipos_notificacion = TipoNotificacion.objects.all().order_by('nombre_tipo')
+    
+    # Opciones de estado (ajusta según tus valores reales)
+    estados_disponibles = [
+        ('Pendiente', 'Pendiente'),
+        ('Enviado', 'Enviado'),
+        ('Entregado', 'Entregado'),
+        ('Fallido', 'Fallido'),
+    ]
+    
+    # Opciones de canal (ajusta según tus valores reales)
+    canales_disponibles = [
+        ('Email', 'Correo Electrónico'),
+        ('SMS', 'Mensaje de Texto'),
+        ('WhatsApp', 'WhatsApp'),
+        ('Plataforma', 'Sistema Interno'),
+    ]
+    
+    # ═══════════════════════════════════════════════════════════════
+    # PASO 5: CONTEXTO PARA EL TEMPLATE
+    # ═══════════════════════════════════════════════════════════════
+    
+    context = {
+        'notificaciones': notificaciones,
+        'total_notificaciones': total_notificaciones,
+        'notificaciones_fallidas': notificaciones_fallidas,
+        'notificaciones_enviadas': notificaciones_enviadas,
+        'notificaciones_entregadas': notificaciones_entregadas,
+        'notificaciones_pendientes': notificaciones_pendientes,
+        
+        # Datos para los filtros
+        'tipos_notificacion': tipos_notificacion,
+        'estados_disponibles': estados_disponibles,
+        'canales_disponibles': canales_disponibles,
+        
+        # Valores de filtros aplicados
+        'fecha_desde': fecha_desde,
+        'fecha_hasta': fecha_hasta,
+        'alumno_query': alumno_query,
+        'tipo_evento': tipo_evento,
+        'estado_envio': estado_envio,
+        'canal': canal,
+        
+        # Indicador de filtros activos
+        'filtros_activos': bool(fecha_desde or fecha_hasta or alumno_query or tipo_evento or estado_envio or canal),
+    }
+    
+    return render(request, 'mensajes/reporte_notificaciones.html', context)
 
 def get_notificaciones(request, alumno_id):
     try:
