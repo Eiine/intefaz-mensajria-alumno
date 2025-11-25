@@ -373,17 +373,54 @@
         </div>
 
     </div>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         function exportarExcel() {
-            // Obtener los parámetros actuales de la URL
-            const params = new URLSearchParams(window.location.search);
-            params.set('export', 'excel');
-            
-            // Redirigir con el parámetro de exportación
-            window.location.href = '{% url "reporte_notificaciones" %}?' + params.toString();
-        }
+
+    let tabla = document.getElementById("tablaNotificaciones");
+
+    let fechaDesde = document.getElementById("fecha_desde").value || "";
+    let fechaHasta = document.getElementById("fecha_hasta").value || "";
+
+    let titulo = `Reporte de Notificaciones - Desde ${fechaDesde} Hasta ${fechaHasta}`;
+
+    // 1) Convertir tabla a hoja temporal
+    let ws_tmp = XLSX.utils.table_to_sheet(tabla);
+
+    // 2) Convertir hoja a array de arrays
+    let data = XLSX.utils.sheet_to_json(ws_tmp, { header: 1 });
+
+    // 3) Insertar fila vacía y título arriba
+    data.unshift([]);           // Fila vacía (fila 2)
+    data.unshift([titulo]);     // Título en A1
+
+    // 4) Reconstruir la hoja con la tabla desplazada
+    let ws = XLSX.utils.aoa_to_sheet(data);
+
+    // 5) COMBINAR CELDAS DEL TÍTULO (A1:G1)
+    ws['!merges'] = [
+        { s: { r:0, c:0 }, e: { r:0, c:6 } }  // A1 hasta G1
+    ];
+
+    // 6) APLICAR ANCHOS DE COLUMNAS SIN QUE EL TÍTULO LOS ALTERE
+    ws["!cols"] = [
+        { wch: 5 },   // Columna A (#)
+        { wch: 30 },  // B (Alumno)
+        { wch: 20 },  // C (Tipo de Evento)
+        { wch: 15 },  // D (Canal)
+        { wch: 20 },  // E (Fecha y hora)
+        { wch: 15 },  // F (Estado)
+        { wch: 50 }   // G (Mensaje resumen)
+    ];
+
+    // 7) Crear workbook y exportar
+    let wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Notificaciones");
+
+    XLSX.writeFile(wb, "notificaciones.xlsx");
+}
+        
     </script>
 </body>
 </html>
