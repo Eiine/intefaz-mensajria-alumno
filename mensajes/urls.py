@@ -34,5 +34,7 @@ urlpatterns = [
     path('panelgeneral/', views.panel_general, name='panel_general'),
     # ... tus URLs existentes ...
     path('reporte-notificaciones/', views.reporte_notificaciones, name='reporte_notificaciones'),
+    #Nico
+    path('reporte/evento/', views.reporte_evento, name='reporte_evento'),
     
 ]
