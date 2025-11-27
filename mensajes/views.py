@@ -10,7 +10,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import never_cache
 from django.http import JsonResponse
 import json
-from django.db.models import Q,Count
+from django.db.models import Count, Q
 from django.contrib.auth.models import User
 from .models import Preferencia
 from django.utils.timezone import localtime
@@ -721,6 +721,7 @@ def panel_general(request):
     }
     comprobacion = list(MensajeInterno.objects.all())
     return render(request, 'mensajes/panel_general.html', context)
+
 def reporte_evento(request):
     # -------- Filtros recibidos ----------
     fecha_inicio = request.GET.get("fecha_inicio")
@@ -734,23 +735,23 @@ def reporte_evento(request):
 
     # Filtro fecha
     if fecha_inicio:
-        notificaciones = notificaciones.filter(fecha_envio_date_gte=fecha_inicio)
+        notificaciones = notificaciones.filter(fecha_envio__date__gte=fecha_inicio)
     if fecha_fin:
-        notificaciones = notificaciones.filter(fecha_envio_date_lte=fecha_fin)
+        notificaciones = notificaciones.filter(fecha_envio__date__lte=fecha_fin)
 
     # Filtro carrera
     if carrera_id:
         notificaciones = notificaciones.filter(tipo__carrera_id=carrera_id)
 
-    # Filtro tipos (pueden ser varios)
+    # Filtro tipos
     if tipos_evento:
         notificaciones = notificaciones.filter(tipo_id__in=tipos_evento)
 
-    # Filtro canal (Email / SMS / WhatsApp)
+    # Filtro canal
     if canal:
         notificaciones = notificaciones.filter(tipo__canal=canal)
 
-    # --------- Agrupación por tipo de notificación ---------
+    # --------- Agrupación ---------
     resumen = (
         notificaciones
         .values("tipo__nombre_tipo")
@@ -763,25 +764,19 @@ def reporte_evento(request):
 
     # --------- Indicadores ---------
     total_enviadas = notificaciones.count()
-    tipo_mayor_envios = (
-        resumen.order_by("-total_enviadas").first()
-        if resumen else None
-    )
+    tipo_mayor_envios = resumen.order_by("-total_enviadas").first() if resumen else None
 
     context = {
         "resumen": resumen,
         "total_enviadas": total_enviadas,
         "tipo_mayor_envios": tipo_mayor_envios,
-
-        # Para los select
         "tipos": TipoNotificacion.objects.all(),
         "carreras": Carrera.objects.all(),
-
-        # Mantener valores seleccionados
         "f_fecha_inicio": fecha_inicio,
         "f_fecha_fin": fecha_fin,
         "f_carrera": carrera_id,
         "f_tipos": tipos_evento,
         "f_canal": canal,
     }
+
     return render(request, "mensajes/reporte_evento.html", context)
