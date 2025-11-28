@@ -1,3 +1,4 @@
+from datetime import datetime
 from django.http import JsonResponse
 from .models import PerfilAlumno, TipoNotificacion,MensajeInterno ,Notificacion, Pago
 from django.shortcuts import render, get_object_or_404, redirect
@@ -10,7 +11,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import never_cache
 from django.http import JsonResponse
 import json
-from django.db.models import Count, Q
+from django.db.models import Count, Q, F, FloatField, ExpressionWrapper
 from django.contrib.auth.models import User
 from .models import Preferencia
 from django.utils.timezone import localtime
@@ -780,3 +781,63 @@ def reporte_evento(request):
     }
 
     return render(request, "mensajes/reporte_evento.html", context)
+def reporte_notificaciones_por_canal(request):
+    # -------- Filtros recibidos ----------
+    fecha_inicio = request.GET.get("fecha_inicio")
+    fecha_fin = request.GET.get("fecha_fin")
+    canal = request.GET.get("canal")
+    tipo_id = request.GET.get("tipo")
+    estado_envio = request.GET.get("estado_envio")
+
+    # -------- Query base ----------
+    notificaciones = Notificacion.objects.all()
+
+    # -------- Filtros ----------
+    if fecha_inicio:
+        notificaciones = notificaciones.filter(fecha_envio__date__gte=fecha_inicio)
+    if fecha_fin:
+        notificaciones = notificaciones.filter(fecha_envio__date__lte=fecha_fin)
+    if canal:
+        notificaciones = notificaciones.filter(tipo__canal=canal)
+    if tipo_id:
+        notificaciones = notificaciones.filter(tipo_id=tipo_id)
+    if estado_envio:
+        notificaciones = notificaciones.filter(estado_envio=estado_envio)
+
+    # --------- Agrupación por canal ---------
+    resumen = (
+        notificaciones
+        .values("tipo__canal")
+        .annotate(
+            total_enviadas=Count("id"),
+            total_fallidas=Count("id", filter=Q(estado_envio="Fallido")),
+        )
+        .annotate(
+            porcentaje_fallo=ExpressionWrapper(
+                100.0 * F("total_fallidas") / F("total_enviadas"),
+                output_field=FloatField()
+            )
+        )
+        .order_by("tipo__canal")
+    )
+
+    # --------- KPIs ---------
+    canal_mas_envios = resumen.order_by("-total_enviadas").first()
+    canal_mas_fallos = resumen.order_by("-porcentaje_fallo").first()
+
+    # --------- Tipos sin duplicados ---------
+    tipos = TipoNotificacion.objects.order_by("nombre_tipo").values("nombre_tipo").distinct()
+
+    context = {
+        "resumen": resumen,
+        "canal_mas_envios": canal_mas_envios,
+        "canal_mas_fallos": canal_mas_fallos,
+        "tipos": tipos,
+        "f_fecha_inicio": fecha_inicio,
+        "f_fecha_fin": fecha_fin,
+        "f_canal": canal,
+        "f_tipo": tipo_id,
+        "f_estado_envio": estado_envio,
+    }
+
+    return render(request, "mensajes/reporte_canal.html", context)

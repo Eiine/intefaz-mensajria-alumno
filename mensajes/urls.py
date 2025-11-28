@@ -36,5 +36,6 @@ urlpatterns = [
     path('reporte-notificaciones/', views.reporte_notificaciones, name='reporte_notificaciones'),
     #Nico
     path('reporte/evento/', views.reporte_evento, name='reporte_evento'),
-    
+    #Javi
+    path("reporte/canal/", views.reporte_notificaciones_por_canal, name="reporte_canal"),
 ]

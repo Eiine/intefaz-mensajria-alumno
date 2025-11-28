@@ -35,6 +35,9 @@
                     <li><a class="dropdown-item active" href="{% url 'panel_admin' %}">Panel admin</a></li>
                     <li><a class="dropdown-item active" href="{% url 'notificaciones' %}">Notificaciones</a></li>
                     <li><a class="dropdown-item active" href="{% url 'panel_general' %}">Panel General</a></li>
+                    <li><a class="dropdown-item active" href="{% url 'reporte_canal' %}">Reporte por Canal</a></li>
+                    <li><a class="dropdown-item active" href="{% url 'reporte_notificaciones' %}">Reporte Notificaciones</a></li>
+                    <li><a class="dropdown-item active" href="{% url 'reporte_evento' %}">Reporte Evento</a></li>
                     {% endif %}
 
                 {% if not user.is_staff %}
