@@ -52,7 +52,7 @@
                     <i class="bi bi-file-earmark-bar-graph"></i> 
                     Reporte de Notificaciones por Alumno
                 </h2>
-                <p class="text-muted">Alumno 1 - Grupo 9: TORRES, DANUZZIO, CARO</p>
+                <p class="text-muted"></p>
             </div>
         </div>
 
@@ -280,97 +280,97 @@
         <!-- TABLA DE RESULTADOS -->
         <!-- ══════════════════════════════════════════════════════════ -->
         <div class="card">
-            <div class="card-header bg-light">
-                <h5 class="mb-0">
-                    <i class="bi bi-table"></i> 
-                    Resultados ({{ total_notificaciones }} notificaciones encontradas)
-                </h5>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover table-striped mb-0" id="tablaNotificaciones">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>#</th>
-                                <th>Alumno</th>
-                                <th>Tipo de Evento</th>
-                                <th>Canal</th>
-                                <th>Fecha y Hora</th>
-                                <th>Estado</th>
-                                <th>Mensaje (Resumen)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for notif in notificaciones %}
-                                <tr>
-                                    <td>{{ forloop.counter }}</td>
-                                    <td>
-                                        {% for alumno in notif.alumnos.all %}
-                                            <div>
-                                                <strong>{{ alumno.user.get_full_name }}</strong><br>
-                                                <small class="text-muted">DNI: {{ alumno.dni }}</small>
-                                            </div>
-                                        {% endfor %}
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-secondary">
-                                            {{ notif.tipo.get_nombre_display }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        {% if notif.canal == 'EMAIL' %}
-                                            <i class="bi bi-envelope text-primary"></i> Email
-                                        {% elif notif.canal == 'SMS' %}
-                                            <i class="bi bi-phone text-success"></i> SMS
-                                        {% elif notif.canal == 'WHATSAPP' %}
-                                            <i class="bi bi-whatsapp text-success"></i> WhatsApp
-                                        {% elif notif.canal == 'INTERNO' %}
-                                            <i class="bi bi-app-indicator text-info"></i> Interno
-                                        {% else %}
-                                            <i class="bi bi-bell"></i> {{ notif.canal }}
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if notif.fecha_envio %}
-                                            {{ notif.fecha_envio|date:"d/m/Y H:i" }}
-                                        {% else %}
-                                            <span class="text-muted">Sin enviar</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if notif.estado == 'ENVIADO' %}
-                                            <span class="badge badge-estado bg-info">Enviado</span>
-                                        {% elif notif.estado == 'ENTREGADO' %}
-                                            <span class="badge badge-estado bg-success">Entregado</span>
-                                        {% elif notif.estado == 'FALLIDO' %}
-                                            <span class="badge badge-estado bg-danger">Fallido</span>
-                                        {% elif notif.estado == 'REBOTADO' %}
-                                            <span class="badge badge-estado bg-warning text-dark">Rebotado</span>
-                                        {% elif notif.estado == 'PENDIENTE' %}
-                                            <span class="badge badge-estado bg-secondary">Pendiente</span>
-                                        {% elif notif.estado == 'LEIDO' %}
-                                            <span class="badge badge-estado bg-primary">Leído</span>
-                                        {% else %}
-                                            <span class="badge badge-estado bg-dark">{{ notif.estado }}</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <small>{{ notif.contenido|truncatewords:10 }}</small>
-                                    </td>
-                                </tr>
-                            {% empty %}
-                                <tr>
-                                    <td colspan="7" class="text-center py-5 text-muted">
-                                        <i class="bi bi-inbox" style="font-size: 3rem;"></i>
-                                        <p class="mt-3">No se encontraron notificaciones con los filtros seleccionados.</p>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+    <div class="card-header bg-light">
+        <h5 class="mb-0">
+            <i class="bi bi-table"></i> 
+            Resultados ({{ total_notificaciones }} notificaciones encontradas)
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-striped mb-0" id="tablaNotificaciones">
+                <thead class="table-dark">
+                    <tr>
+                        <th>#</th>
+                        <th>Alumno</th>
+                        <th>Tipo de Evento</th>
+                        <th>Canal</th>
+                        <th>Fecha y Hora</th>
+                        <th>Estado</th>
+                        <th>Mensaje (Resumen)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for notif in notificaciones %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>
+                                {% for alumno in notif.alumnos.all %}
+                                    <div>
+                                        <strong>{{ alumno.user.get_full_name }}</strong><br>
+                                        <small class="text-muted">DNI: {{ alumno.dni }}</small>
+                                    </div>
+                                {% endfor %}
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">
+                                    {{ notif.tipo.nombre_tipo }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if notif.tipo.canal == 'Email' %}
+                                    <i class="bi bi-envelope text-primary"></i> Email
+                                {% elif notif.tipo.canal == 'SMS' %}
+                                    <i class="bi bi-phone text-success"></i> SMS
+                                {% elif notif.tipo.canal == 'WhatsApp' %}
+                                    <i class="bi bi-whatsapp text-success"></i> WhatsApp
+                                {% elif notif.tipo.canal == 'Plataforma' %}
+                                    <i class="bi bi-app-indicator text-info"></i> Plataforma
+                                {% else %}
+                                    <i class="bi bi-bell"></i> {{ notif.tipo.canal }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if notif.fecha_envio %}
+                                    {{ notif.fecha_envio|date:"d/m/Y H:i" }}
+                                {% else %}
+                                    <span class="text-muted">Sin enviar</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if notif.estado_envio == 'Enviado' %}
+                                    <span class="badge badge-estado bg-info">Enviado</span>
+                                {% elif notif.estado_envio == 'Entregado' %}
+                                    <span class="badge badge-estado bg-success">Entregado</span>
+                                {% elif notif.estado_envio == 'Fallido' %}
+                                    <span class="badge badge-estado bg-danger">Fallido</span>
+                                {% elif notif.estado_envio == 'Rebotado' %}
+                                    <span class="badge badge-estado bg-warning text-dark">Rebotado</span>
+                                {% elif notif.estado_envio == 'Pendiente' %}
+                                    <span class="badge badge-estado bg-secondary">Pendiente</span>
+                                {% elif notif.estado_envio == 'Leido' %}
+                                    <span class="badge badge-estado bg-primary">Leído</span>
+                                {% else %}
+                                    <span class="badge badge-estado bg-dark">{{ notif.estado_envio }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small>{{ notif.mensaje|truncatewords:10 }}</small>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                                <p class="mt-3">No se encontraron notificaciones con los filtros seleccionados.</p>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
+    </div>
+</div>
 
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>    
