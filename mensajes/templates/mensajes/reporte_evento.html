@@ -59,15 +59,17 @@
             {% endfor %}
         </select>
 
-        <label>Tipos de evento:</label>
-        <select name="tipos" multiple size="3">
-            {% for t in tipos %}
-                <option value="{{ t.id }}" 
-                    {% if t.id|stringformat:"s" in f_tipos %}selected{% endif %}>
-                    {{ t.nombre_tipo }}
-                </option>
-            {% endfor %}
-        </select>
+<label>Tipos de evento:</label>
+<select name="tipos">
+    <option value="">Todos</option>
+    <option value="1" {% if f_tipos == "1" %}selected{% endif %}>Pago</option>
+    <option value="2" {% if f_tipos == "2" %}selected{% endif %}>Falta de documentación</option>
+    <option value="3" {% if f_tipos == "3" %}selected{% endif %}>Clase cancelada</option>
+    <option value="4" {% if f_tipos == "4" %}selected{% endif %}>Parcial</option>
+    <option value="5" {% if f_tipos == "5" %}selected{% endif %}>Recordatorios</option>
+</select>
+
+
 
         <label>Canal:</label>
         <select name="canal">
