@@ -728,31 +728,40 @@ def reporte_evento(request):
     fecha_inicio = request.GET.get("fecha_inicio")
     fecha_fin = request.GET.get("fecha_fin")
     carrera_id = request.GET.get("carrera")
-    tipos_evento = request.GET.getlist("tipos")
+    tipos_evento = request.GET.get("tipos")
     canal = request.GET.get("canal")
 
     # -------- Query base ----------
     notificaciones = Notificacion.objects.all()
 
-    # Filtro fecha
+    # -------- Filtros ----------
+    # Filtrar por fechas
     if fecha_inicio:
         notificaciones = notificaciones.filter(fecha_envio__date__gte=fecha_inicio)
     if fecha_fin:
         notificaciones = notificaciones.filter(fecha_envio__date__lte=fecha_fin)
 
-    # Filtro carrera
+    # Filtrar por carrera (solo si viene un valor válido)
     if carrera_id:
-        notificaciones = notificaciones.filter(tipo__carrera_id=carrera_id)
+        try:
+            carrera_id_int = int(carrera_id)
+            notificaciones = notificaciones.filter(tipo__carrera_id=carrera_id_int)
+        except ValueError:
+            pass  # No filtrar si viene vacío o inválido
 
-    # Filtro tipos
+    # Filtrar por tipo de evento (solo si viene un valor válido)
     if tipos_evento:
-        notificaciones = notificaciones.filter(tipo_id__in=tipos_evento)
+        try:
+            tipos_evento_int = int(tipos_evento)
+            notificaciones = notificaciones.filter(tipo_id=tipos_evento_int)
+        except ValueError:
+            pass  # No filtrar si viene vacío o inválido
 
-    # Filtro canal
+    # Filtrar por canal
     if canal:
         notificaciones = notificaciones.filter(tipo__canal=canal)
 
-    # --------- Agrupación ---------
+    # --------- Agrupación por tipo ---------
     resumen = (
         notificaciones
         .values("tipo__nombre_tipo")
@@ -763,10 +772,11 @@ def reporte_evento(request):
         .order_by("tipo__nombre_tipo")
     )
 
-    # --------- Indicadores ---------
+    # --------- KPIs ---------
     total_enviadas = notificaciones.count()
     tipo_mayor_envios = resumen.order_by("-total_enviadas").first() if resumen else None
 
+    # --------- Contexto para template ---------
     context = {
         "resumen": resumen,
         "total_enviadas": total_enviadas,
@@ -792,7 +802,7 @@ def reporte_notificaciones_por_canal(request):
     # -------- Query base ----------
     notificaciones = Notificacion.objects.all()
 
-    # -------- Filtros ----------
+    # -------- Filtros ---------
     if fecha_inicio:
         notificaciones = notificaciones.filter(fecha_envio__date__gte=fecha_inicio)
     if fecha_fin:
@@ -800,7 +810,11 @@ def reporte_notificaciones_por_canal(request):
     if canal:
         notificaciones = notificaciones.filter(tipo__canal=canal)
     if tipo_id:
-        notificaciones = notificaciones.filter(tipo_id=tipo_id)
+        try:
+            tipo_id_int = int(tipo_id)
+            notificaciones = notificaciones.filter(tipo_id=tipo_id_int)
+        except ValueError:
+            pass  # Ignorar si es vacío o inválido
     if estado_envio:
         notificaciones = notificaciones.filter(estado_envio=estado_envio)
 
@@ -825,8 +839,8 @@ def reporte_notificaciones_por_canal(request):
     canal_mas_envios = resumen.order_by("-total_enviadas").first()
     canal_mas_fallos = resumen.order_by("-porcentaje_fallo").first()
 
-    # --------- Tipos sin duplicados ---------
-    tipos = TipoNotificacion.objects.order_by("nombre_tipo").values("nombre_tipo").distinct()
+    # --------- Tipos para el select ---------
+    tipos = TipoNotificacion.objects.order_by("nombre_tipo").values("id", "nombre_tipo").distinct()
 
     context = {
         "resumen": resumen,
